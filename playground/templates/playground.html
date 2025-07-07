@@ -1,4 +1,5 @@
-{% extends 'base.html' %}
+{% extends 'base_no_nav.html' %}
+{% load static %}
 
 {% block title %}Arbius Playground - Chat{% endblock %}
 
@@ -22,8 +23,8 @@
   }
   
   .model-card.selected {
-    border-color: #6366f1;
-    background: rgba(99, 102, 241, 0.1);
+    border-color: white;
+    background: rgba(255, 255, 255, 0.1);
   }
   
   .chat-container {
@@ -43,385 +44,396 @@
   .typing-indicator.active {
     display: flex;
   }
+  
+  .history-filter-pill {
+    @apply px-4 py-1 rounded-full bg-white/10 text-white text-xs font-semibold transition hover:bg-white/20 focus:outline-none;
+  }
+  .history-filter-pill.active {
+    @apply bg-white text-black shadow;
+  }
+  .history-item {
+    @apply flex items-center gap-2 px-3 py-2 rounded-lg text-textmuted cursor-pointer hover:bg-white/10 hover:text-white transition text-base;
+  }
+  .history-item.selected {
+    @apply bg-white/10 text-white;
+  }
+  .model-pill {
+    @apply px-4 py-1 rounded-full bg-white/10 text-white text-xs font-semibold transition hover:bg-white/20 focus:outline-none;
+  }
+  .model-pill.active {
+    @apply bg-white text-black shadow;
+  }
+  html, body, .min-h-screen {
+    height: 100vh !important;
+    min-height: 100vh !important;
+    overflow: hidden !important;
+  }
+  #__next, .flex.flex-col.bg-black.min-h-screen {
+    height: 100vh !important;
+    min-height: 100vh !important;
+    overflow: hidden !important;
+  }
+  .flex-1.flex.flex-col.min-h-0.md\:ml-72 {
+    height: 100vh !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+  #chat-messages {
+    overflow-y: auto !important;
+    max-height: calc(100vh - 180px) !important;
+  }
+  .sidebar {
+    transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s, box-shadow 0.2s;
+    will-change: width;
+    overflow: hidden;
+  }
+  .sidebar.collapsed {
+    width: 56px !important;
+    min-width: 56px !important;
+    max-width: 56px !important;
+  }
+  .sidebar .sidebar-content {
+    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 1;
+    visibility: visible;
+  }
+  .sidebar.collapsed .sidebar-content {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  #main-content.expanded {
+    margin-left: 56px !important;
+  }
+  @media (min-width: 768px) {
+    #main-content {
+      margin-left: 18rem; /* 72px * 4 = 288px */
+    }
+    #main-content.expanded {
+      margin-left: 56px !important;
+    }
+  }
+  #sticky-chat-input {
+    left: 0 !important;
+    margin-left: 288px !important;
+    width: calc(100vw - 288px) !important;
+    max-width: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    bottom: 24px !important;
+    padding: 0;
+    z-index: 30;
+    transform: none !important;
+    transition: left 0.18s ease-in-out, width 0.18s ease-in-out, margin-left 0.18s ease-in-out, transform 0.18s ease-in-out;
+  }
+  #chat-form {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0;
+  }
+  body.sidebar-collapsed #sticky-chat-input {
+    left: 50% !important;
+    margin-left: 0 !important;
+    width: 100vw !important;
+    max-width: 900px !important;
+    transform: translateX(-50%) !important;
+  }
+  @media (max-width: 1024px) {
+    #sticky-chat-input, #chat-form {
+      max-width: 98vw !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      width: 100vw !important;
+      margin-left: 0 !important;
+    }
+    body.sidebar-collapsed #sticky-chat-input {
+      left: 50% !important;
+      width: 100vw !important;
+      transform: translateX(-50%) !important;
+      margin-left: 0 !important;
+    }
+  }
+  .sidebar-collapsed #sticky-chat-input {
+    max-width: 900px !important;
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="flex flex-col bg-gradient-to-b from-[#181f3a] to-[#10172a]">
-  <div class="flex flex-1 min-h-0 w-full gap-6 px-6 py-4" style="height: calc(100vh - 4rem);">
-    
-    <!-- Sidebar -->
-    <aside class="w-80 bg-[#181f3a] rounded-2xl p-6 flex flex-col gap-6 shadow-lg border border-[#232b45] h-full min-h-0">
+<!-- Navigation -->
+<nav class="nav-glass w-full fixed top-0 z-30 transition-all duration-300">
+  <div class="max-w-7xl mx-auto px-0 sm:px-0 lg:px-0 flex items-center justify-between h-16 relative">
+    <!-- Logo and Name on Left -->
+    <div class="flex items-center gap-3 pl-6">
+      <a href="{% url 'home' %}" class="flex items-center gap-2 font-bold text-2xl text-white">
+        <img src="{% static 'arbius.ef337b97.svg' %}" alt="Arbius Logo" class="inline-block w-7 h-7" />
+        Arbius
+      </a>
+    </div>
+    <!-- Wallet/Actions all the way on Right -->
+    <div class="flex items-center gap-3 ml-auto pr-6">
+      <!-- Desktop Wallet Section -->
+      <div class="hidden md:flex items-center gap-3">
+        <!-- Connected State -->
+        <div id="wallet-connected-container" class="flex items-center gap-2 bg-transparent border-none shadow-none rounded-full px-2 py-1 transition-all duration-300 text-xs font-mono" style="display: none; min-width:0;">
+          <span id="wallet-address" class="text-white cursor-pointer hover:underline px-2" style="min-width:0;"></span>
+          <span id="aius-balance" class="text-white px-2 font-semibold" style="display:none;"></span>
+          <button id="disconnect-wallet-btn" class="ml-1 w-7 h-7 flex items-center justify-center rounded-full border-none bg-transparent text-white hover:bg-white/10 transition-all duration-200" title="Disconnect">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+        <!-- Connect Button -->
+        <button id="connect-wallet-btn"
+          class="bg-white text-black px-4 py-2.5 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 hover:scale-105">
+          <i class="fas fa-wallet"></i> Connect Wallet
+        </button>
+      </div>
+      <!-- Mobile Wallet Section -->
+      <div class="md:hidden flex items-center gap-2">
+        <button id="connect-wallet-btn-mobile"
+          class="bg-white text-black px-4 py-2.5 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 hover:scale-105">
+          <i class="fas fa-wallet"></i> Connect
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="flex flex-col bg-black min-h-screen pt-16">
+  <!-- Slide-out Sidebar Trigger -->
+  <button id="sidebar-toggle" class="fixed top-20 left-4 z-40 bg-white/10 text-white rounded-full p-2 shadow hover:bg-white/20 md:hidden">
+    <i class="fas fa-bars"></i>
+  </button>
+  <!-- Collapsible Sidebar -->
+  <aside id="sidebar" class="sidebar fixed top-0 left-0 h-screen w-72 bg-cardbg border-r border-border z-50 md:relative md:w-72 md:h-screen md:border-r md:shadow-lg md:bg-cardbg md:flex md:flex-col md:static">
+    <div class="sidebar-content flex flex-col gap-4 p-6 h-full">
       <!-- New Chat Button -->
-      <button id="new-chat-btn" class="w-full bg-gradient-to-r from-primary to-secondary text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 hover:scale-105 transition">
+      <button id="new-chat-btn" class="w-full bg-white text-black font-semibold py-2 rounded-xl flex items-center justify-center gap-2 hover:scale-105 transition text-base shadow">
         <i class="fas fa-plus"></i> New Chat
       </button>
-      
-      <!-- Search -->
-      <div class="relative">
-        <input type="text" id="chat-search" placeholder="Search chats..." class="w-full bg-[#232b45] text-textlight rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
-        <i class="fas fa-search absolute right-3 top-3 text-textmuted"></i>
+      <!-- History Label -->
+      <div class="text-xs font-semibold text-textmuted tracking-widest uppercase pl-1 pt-2">History</div>
+      <!-- Filter Pills -->
+      <div class="flex gap-3 mb-2 justify-center w-full">
+        <button class="history-filter-pill active" data-type="all"><span class="filter-circle">All</span></button>
+        <button class="history-filter-pill" data-type="text"><span class="filter-circle"><i class="fas fa-comment-dots"></i></span></button>
+        <button class="history-filter-pill" data-type="image"><span class="filter-circle"><i class="fas fa-image"></i></span></button>
+        <button class="history-filter-pill" data-type="video"><span class="filter-circle"><i class="fas fa-video"></i></span></button>
       </div>
-      
-      <!-- Chat History -->
-      <div class="flex-1 overflow-y-auto min-h-0">
-        <h3 class="text-sm font-semibold text-textmuted mb-3">History</h3>
-        <div class="space-y-2" id="chat-history">
-          <!-- Placeholder previous chats -->
-          <div class="flex items-center gap-2 bg-[#232b45] rounded-lg px-3 py-2 text-textlight cursor-pointer hover:bg-[#222b45]">
-            <i class="fas fa-comment-dots text-primary"></i>
-            <span class="truncate flex-1">What is Roko's Basilisk?</span>
-          </div>
-          <div class="flex items-center gap-2 bg-[#232b45] rounded-lg px-3 py-2 text-textlight cursor-pointer hover:bg-[#222b45]">
-            <i class="fas fa-comment-dots text-primary"></i>
-            <span class="truncate flex-1">How to train a Belgian Malinois</span>
-          </div>
-          <div class="flex items-center gap-2 bg-[#232b45] rounded-lg px-3 py-2 text-textlight cursor-pointer hover:bg-[#222b45]">
-            <i class="fas fa-image text-secondary"></i>
-            <span class="truncate flex-1">Elon Musk naked with...</span>
-          </div>
-          <div class="flex items-center gap-2 bg-[#232b45] rounded-lg px-3 py-2 text-textlight cursor-pointer hover:bg-[#222b45]">
-            <i class="fas fa-comment-dots text-primary"></i>
-            <span class="truncate flex-1">Koala</span>
-          </div>
+      <hr class="border-border my-2" />
+      <!-- History List -->
+      <div class="flex-1 overflow-y-auto min-h-0 space-y-1" id="chat-history">
+        <!-- Placeholder conversations -->
+        <div class="history-item" data-type="text"><i class="fas fa-comment-dots"></i> <span>What is Roko's Basilisk?</span></div>
+        <div class="history-item" data-type="text"><i class="fas fa-comment-dots"></i> <span>How to train a Belgian Malinois</span></div>
+        <div class="history-item" data-type="image"><i class="fas fa-image"></i> <span>Elon Musk naked with...</span></div>
+        <div class="history-item" data-type="text"><i class="fas fa-comment-dots"></i> <span>Koala</span></div>
+        <div class="history-item" data-type="video"><i class="fas fa-video"></i> <span>AI-generated short film</span></div>
+      </div>
+    </div>
+  </aside>
+  <!-- Sidebar Collapse Button (outside sidebar, vertically centered, always visible) -->
+  <button id="sidebar-collapse-btn" class="fixed z-50 left-0 top-1/2 -translate-y-1/2 bg-white text-black border border-border shadow-lg rounded-full p-2 transition hover:bg-gray-200" style="transform: translate(-50%, -50%); width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+    <i id="sidebar-collapse-icon" class="fas fa-angle-left fa-lg"></i>
+  </button>
+  <!-- Overlay for mobile sidebar -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 hidden md:hidden"></div>
+  <!-- Main Area -->
+  <div id="main-content" class="flex-1 flex flex-col min-h-0 md:ml-72 transition-all duration-300">
+    <!-- Conversation Header -->
+    <div class="flex items-center justify-between px-8 pt-8 pb-4">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-white rounded-xl flex items-center justify-center">
+          <i class="fas fa-brain text-black"></i>
+        </div>
+        <div>
+          <h2 class="text-lg font-semibold text-white">Current Conversation</h2>
+          <p class="text-textmuted text-xs">Model: <span id="current-model">M8B</span></p>
         </div>
       </div>
-    </aside>
-
-    <!-- Main Chat Area -->
-    <section class="flex-1 flex flex-col h-full min-h-0 bg-[#181f3a] rounded-2xl shadow-lg border border-[#232b45]">
-      
-      <!-- Chat Header -->
-      <div class="p-6 border-b border-[#232b45] flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-            <i class="fas fa-brain text-white"></i>
-          </div>
-          <div>
-            <h2 class="text-lg font-semibold text-white">M8B-Uncensored</h2>
-            <p class="text-textmuted text-sm">Text Generation Model</p>
-          </div>
-        </div>
-        <button id="model-selector-btn" class="bg-[#232b45] text-white px-4 py-2 rounded-xl text-sm hover:bg-[#2a3345] transition">
-          Change Model
-        </button>
+      <!-- Model Switcher Pills -->
+      <div class="flex gap-2">
+        <button class="model-pill active" data-model="m8b-uncensored">M8B</button>
+        <button class="model-pill" data-model="qwen-qwq">Qwen</button>
+        <button class="model-pill" data-model="stable-diffusion">SD</button>
+        <button class="model-pill" data-model="dall-e">DALL-E</button>
+        <button class="model-pill" data-model="wai">WAI</button>
       </div>
-      
-      <!-- Chat Messages -->
-      <div class="flex-1 overflow-y-auto min-h-0 p-6" id="chat-messages">
-        <!-- Welcome Message -->
-        <div class="chat-message mb-6">
-          <div class="flex items-start gap-3">
-            <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-              <i class="fas fa-robot text-white text-sm"></i>
-            </div>
-            <div class="flex-1">
-              <div class="bg-[#232b45] rounded-2xl p-4 text-white">
-                <p class="mb-3">Hello! I'm M8B-Uncensored, a powerful language model. I can help you with:</p>
-                <ul class="space-y-1 text-sm text-textmuted">
-                  <li>• Creative writing and storytelling</li>
-                  <li>• Technical explanations and tutorials</li>
-                  <li>• Analysis and research assistance</li>
-                  <li>• General conversation and Q&A</li>
-                </ul>
-                <p class="mt-3 text-sm text-textmuted">What would you like to explore today?</p>
+    </div>
+    <!-- Chat Area -->
+    <div class="flex-1 flex flex-col min-h-0" style="background: #0a0a0a;">
+      <div class="flex-1 overflow-y-auto min-h-0 px-0 pt-12 pb-0" id="chat-messages">
+        <!-- Placeholder for chat messages -->
+        <div id="empty-chat-state" class="flex flex-col justify-center h-full w-full">
+          <div class="flex flex-col gap-6 w-full h-full">
+            <!-- Model Selector Pill -->
+            <div class="relative w-full flex justify-start px-8 pt-8">
+              <button id="model-pill" class="bg-white/10 text-white px-6 py-3 rounded-full font-semibold text-lg shadow hover:bg-white/20 transition flex items-center gap-2" onclick="toggleModelDropdown()">
+                <span id="selected-model">M8B</span>
+                <i class="fas fa-chevron-down"></i>
+              </button>
+              <div id="model-dropdown" class="absolute top-14 left-8 bg-cardbg border border-border rounded-xl shadow-lg w-64 z-50 hidden flex-col">
+                <button class="model-dropdown-item px-6 py-3 text-left text-white hover:bg-white/10 w-full" data-model="m8b-uncensored">M8B</button>
+                <button class="model-dropdown-item px-6 py-3 text-left text-white hover:bg-white/10 w-full" data-model="qwen-qwq">Qwen</button>
+                <button class="model-dropdown-item px-6 py-3 text-left text-white hover:bg-white/10 w-full" data-model="stable-diffusion">SD</button>
+                <button class="model-dropdown-item px-6 py-3 text-left text-white hover:bg-white/10 w-full" data-model="dall-e">DALL-E</button>
+                <button class="model-dropdown-item px-6 py-3 text-left text-white hover:bg-white/10 w-full" data-model="wai">WAI</button>
               </div>
             </div>
           </div>
         </div>
-        
-        <!-- Typing Indicator -->
-        <div class="typing-indicator" id="typing-indicator">
-          <div class="flex items-start gap-3">
-            <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-              <i class="fas fa-robot text-white text-sm"></i>
-            </div>
-            <div class="bg-[#232b45] rounded-2xl p-4">
-              <div class="flex items-center gap-1">
-                <div class="w-2 h-2 bg-textmuted rounded-full animate-bounce"></div>
-                <div class="w-2 h-2 bg-textmuted rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
-                <div class="w-2 h-2 bg-textmuted rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Chat Input (no margin-top, always at bottom) -->
-      <div class="p-4 border-t border-[#232b45] mb-0">
-        <form id="chat-form" class="flex items-end gap-3">
-          <div class="flex-1">
-            <textarea 
-              id="message-input" 
-              placeholder="Type your message..." 
-              class="message-input w-full bg-[#232b45] text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
-              rows="1"
-            ></textarea>
-          </div>
-          <button id="send-task-btn" type="submit" class="bg-gradient-to-r from-primary to-secondary text-white font-semibold px-6 py-3 rounded-xl shadow hover:scale-105 transition flex items-center gap-2">
-            <i class="fas fa-paper-plane"></i>
-          </button>
-        </form>
-      </div>
-    </section>
-  </div>
-</div>
-
-<!-- Model Selection Modal -->
-<div id="model-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden">
-  <div class="flex items-center justify-center min-h-screen p-4">
-    <div class="bg-[#181f3a] rounded-2xl p-6 w-full max-w-2xl border border-[#232b45]">
-      <div class="flex items-center justify-between mb-6">
-        <h3 class="text-xl font-semibold text-white">Select Model</h3>
-        <button id="close-modal" class="text-textmuted hover:text-white">
-          <i class="fas fa-times text-xl"></i>
-        </button>
-      </div>
-      
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <!-- Text Models -->
-        <div class="model-card bg-[#232b45] rounded-xl p-4 cursor-pointer border-2 border-transparent hover:border-primary/30" data-model="m8b-uncensored" data-type="text">
-          <div class="flex items-center gap-3 mb-2">
-            <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-              <i class="fas fa-brain text-white"></i>
-            </div>
-            <div>
-              <h4 class="font-semibold text-white">M8B-Uncensored</h4>
-              <p class="text-textmuted text-sm">Text Generation</p>
-            </div>
-          </div>
-          <p class="text-textmuted text-sm">Powerful uncensored language model for creative writing and analysis.</p>
-        </div>
-        
-        <div class="model-card bg-[#232b45] rounded-xl p-4 cursor-pointer border-2 border-transparent hover:border-primary/30" data-model="qwen-qwq" data-type="text">
-          <div class="flex items-center gap-3 mb-2">
-            <div class="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center">
-              <i class="fas fa-brain text-white"></i>
-            </div>
-            <div>
-              <h4 class="font-semibold text-white">Qwen QwQ 32B</h4>
-              <p class="text-textmuted text-sm">Text Generation</p>
-            </div>
-          </div>
-          <p class="text-textmuted text-sm">Advanced 32B parameter model for complex reasoning tasks.</p>
-        </div>
-        
-        <div class="model-card bg-[#232b45] rounded-xl p-4 cursor-pointer border-2 border-transparent hover:border-primary/30" data-model="deepseek-coder" data-type="text">
-          <div class="flex items-center gap-3 mb-2">
-            <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
-              <i class="fas fa-code text-white"></i>
-            </div>
-            <div>
-              <h4 class="font-semibold text-white">Deepseek Coder v2</h4>
-              <p class="text-textmuted text-sm">Code Generation</p>
-            </div>
-          </div>
-          <p class="text-textmuted text-sm">Specialized model for code generation and programming assistance.</p>
-        </div>
-        
-        <!-- Image Models -->
-        <div class="model-card bg-[#232b45] rounded-xl p-4 cursor-pointer border-2 border-transparent hover:border-primary/30" data-model="wai-sdxl" data-type="image">
-          <div class="flex items-center gap-3 mb-2">
-            <div class="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
-              <i class="fas fa-image text-white"></i>
-            </div>
-            <div>
-              <h4 class="font-semibold text-white">WAI SDXL (NSFW)</h4>
-              <p class="text-textmuted text-sm">Image Generation</p>
-            </div>
-          </div>
-          <p class="text-textmuted text-sm">High-quality image generation with NSFW capabilities.</p>
+        <div id="chat-messages-list" class="hidden">
+          <!-- Chat messages will appear here when a conversation is selected -->
         </div>
       </div>
     </div>
   </div>
 </div>
-{% endblock %}
+<!-- Sticky Chat Input (always visible at the bottom) -->
+<div id="sticky-chat-input" class="fixed bottom-6 z-30 transition-all duration-300" style="left: 0; margin-left: 288px; width: calc(100vw - 288px); max-width: none; transform: none;">
+  <form id="chat-form" class="w-full max-w-3xl mx-auto flex items-center justify-center" autocomplete="off" style="background: none; box-shadow: none; max-width: 900px;">
+    <div class="flex w-full items-center bg-black/80 border border-border rounded-full pl-4 pr-1 py-2 shadow-lg backdrop-blur-md" style="box-shadow: 0 6px 32px 0 rgba(0,0,0,0.18);">
+      <textarea 
+        id="message-input" 
+        placeholder="Type your message..." 
+        class="flex-1 bg-transparent text-white rounded-full px-2 py-2 focus:outline-none focus:ring-2 focus:ring-white/50 resize-none border-none text-base transition-all duration-200"
+        rows="1"
+        style="min-height: 44px; max-height: 120px; box-shadow: none; background: transparent;"
+      ></textarea>
+      <button id="send-task-btn" type="submit" class="ml-2 mr-1 bg-white text-black font-semibold w-11 h-11 rounded-full shadow hover:scale-105 transition flex items-center justify-center text-lg p-0 border-none" style="box-shadow: 0 2px 8px rgba(0,0,0,0.10);">
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+  </form>
+</div>
 
-{% block extra_js %}
 <script>
-  // Chat functionality
-  let currentModel = 'm8b-uncensored';
-  let chatHistory = [];
+// Sidebar toggle functionality
+const sidebarToggle = document.getElementById('sidebar-toggle');
+const sidebar = document.getElementById('sidebar');
+const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+sidebarToggle.addEventListener('click', () => {
+  sidebar.classList.toggle('-translate-x-full');
+  sidebarOverlay.classList.toggle('hidden');
+});
+
+sidebarOverlay.addEventListener('click', () => {
+  sidebar.classList.add('-translate-x-full');
+  sidebarOverlay.classList.add('hidden');
+});
+
+// Model dropdown functionality
+function toggleModelDropdown() {
+  const dropdown = document.getElementById('model-dropdown');
+  dropdown.classList.toggle('hidden');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+  const dropdown = document.getElementById('model-dropdown');
+  const modelPill = document.getElementById('model-pill');
   
-  // DOM elements
-  const chatForm = document.getElementById('chat-form');
-  const messageInput = document.getElementById('message-input');
-  const chatMessages = document.getElementById('chat-messages');
-  const typingIndicator = document.getElementById('typing-indicator');
-  const newChatBtn = document.getElementById('new-chat-btn');
-  const modelSelectorBtn = document.getElementById('model-selector-btn');
-  const modelModal = document.getElementById('model-modal');
-  const closeModal = document.getElementById('close-modal');
-  const modelCards = document.querySelectorAll('.model-card');
-  
-  // Auto-resize textarea
-  messageInput.addEventListener('input', function() {
-    this.style.height = 'auto';
-    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-  });
-  
-  // Handle form submission
-  chatForm.addEventListener('submit', async function(e) {
-    // If MetaMask is available and connected, send the transaction and prevent default chat logic
-    if (typeof window.ethereum !== 'undefined' && window.metaMaskManager && window.metaMaskManager.isConnected) {
-      e.preventDefault();
-      await window.metaMaskManager.sendArbitrumTransaction();
-      return false;
-    }
-    e.preventDefault();
-    const message = messageInput.value.trim();
-    if (!message) return;
-    
-    // Add user message
-    addMessage(message, 'user');
-    messageInput.value = '';
-    messageInput.style.height = 'auto';
-    
-    // Show typing indicator
-    typingIndicator.classList.add('active');
-    
-    // Simulate AI response (replace with actual API call)
-    setTimeout(() => {
-      typingIndicator.classList.remove('active');
-      const response = generateResponse(message);
-      addMessage(response, 'assistant');
-    }, 1500);
-  });
-  
-  // Add message to chat
-  function addMessage(content, sender) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'chat-message mb-6';
-    
-    const isUser = sender === 'user';
-    const icon = isUser ? 'fa-user' : 'fa-robot';
-    const bgColor = isUser ? 'bg-primary' : 'bg-[#232b45]';
-    const alignClass = isUser ? 'justify-end' : 'justify-start';
-    
-    messageDiv.innerHTML = `
-      <div class="flex items-start gap-3 ${alignClass}">
-        ${!isUser ? `<div class="w-8 h-8 ${bgColor} rounded-lg flex items-center justify-center flex-shrink-0">
-          <i class="fas ${icon} text-white text-sm"></i>
-        </div>` : ''}
-        <div class="flex-1 ${isUser ? 'max-w-[80%]' : ''}">
-          <div class="${bgColor} rounded-2xl p-4 text-white">
-            <p>${content}</p>
-          </div>
-        </div>
-        ${isUser ? `<div class="w-8 h-8 ${bgColor} rounded-lg flex items-center justify-center flex-shrink-0">
-          <i class="fas ${icon} text-white text-sm"></i>
-        </div>` : ''}
-      </div>
-    `;
-    
-    chatMessages.appendChild(messageDiv);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-    
-    // Add to chat history
-    chatHistory.push({ content, sender, timestamp: new Date() });
+  if (!dropdown.contains(e.target) && !modelPill.contains(e.target)) {
+    dropdown.classList.add('hidden');
   }
-  
-  // Generate mock response (replace with actual API)
-  function generateResponse(message) {
-    const responses = [
-      "That's an interesting question! Let me think about that...",
-      "I can help you with that. Here's what I know...",
-      "Great question! Based on my knowledge...",
-      "I'd be happy to assist with that. Here's my perspective...",
-      "That's a fascinating topic. Let me break it down for you..."
-    ];
-    return responses[Math.floor(Math.random() * responses.length)];
-  }
-  
-  // New chat functionality
-  newChatBtn.addEventListener('click', function() {
-    chatMessages.innerHTML = `
-      <div class="chat-message mb-6">
-        <div class="flex items-start gap-3">
-          <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-            <i class="fas fa-robot text-white text-sm"></i>
-          </div>
-          <div class="flex-1">
-            <div class="bg-[#232b45] rounded-2xl p-4 text-white">
-              <p>Hello! I'm ready for a new conversation. What would you like to discuss?</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-    chatHistory = [];
+});
+
+// Model selection
+document.querySelectorAll('.model-dropdown-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const model = item.getAttribute('data-model');
+    const modelName = item.textContent;
+    
+    document.getElementById('selected-model').textContent = modelName;
+    document.getElementById('current-model').textContent = modelName;
+    
+    // Update active state on model pills
+    document.querySelectorAll('.model-pill').forEach(pill => {
+      pill.classList.remove('active');
+    });
+    document.querySelector(`[data-model="${model}"]`).classList.add('active');
+    
+    document.getElementById('model-dropdown').classList.add('hidden');
   });
-  
-  // Model selection
-  modelSelectorBtn.addEventListener('click', function() {
-    modelModal.classList.remove('hidden');
-  });
-  
-  closeModal.addEventListener('click', function() {
-    modelModal.classList.add('hidden');
-  });
-  
-  modelModal.addEventListener('click', function(e) {
-    if (e.target === modelModal) {
-      modelModal.classList.add('hidden');
-    }
-  });
-  
-  modelCards.forEach(card => {
-    card.addEventListener('click', function() {
-      const model = this.dataset.model;
-      const type = this.dataset.type;
-      
-      // Update active model display
-      const activeModelDiv = document.getElementById('active-model');
-      const icon = type === 'image' ? 'fa-image' : 'fa-brain';
-      const color = type === 'image' ? 'bg-purple-500' : 'bg-primary';
-      
-      activeModelDiv.innerHTML = `
-        <div class="w-8 h-8 ${color} rounded-lg flex items-center justify-center">
-          <i class="fas ${icon} text-white text-sm"></i>
-        </div>
-        <div class="flex-1">
-          <div class="text-white font-medium text-sm">${this.querySelector('h4').textContent}</div>
-          <div class="text-textmuted text-xs">${type === 'image' ? 'Image Generation' : 'Text Generation'}</div>
-        </div>
-      `;
-      
-      currentModel = model;
-      modelModal.classList.add('hidden');
-      
-      // Update chat header
-      const chatHeader = document.querySelector('.p-6.border-b h2');
-      const chatSubtitle = document.querySelector('.p-6.border-b p');
-      chatHeader.textContent = this.querySelector('h4').textContent;
-      chatSubtitle.textContent = type === 'image' ? 'Image Generation Model' : 'Text Generation Model';
+});
+
+// History filter functionality
+document.querySelectorAll('.history-filter-pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    document.querySelectorAll('.history-filter-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    const filterType = pill.getAttribute('data-type');
+    document.querySelectorAll('.history-item').forEach(item => {
+      if (filterType === 'all' || item.getAttribute('data-type') === filterType) {
+        item.style.display = '';
+      } else {
+        item.style.display = 'none';
+      }
     });
   });
-  
-  // Search functionality
-  const chatSearch = document.getElementById('chat-search');
-  chatSearch.addEventListener('input', function() {
-    const query = this.value.toLowerCase();
-    // Implement search functionality here
+});
+
+// New chat functionality
+document.getElementById('new-chat-btn').addEventListener('click', () => {
+  document.getElementById('empty-chat-state').classList.remove('hidden');
+  document.getElementById('chat-messages-list').classList.add('hidden');
+});
+
+// History item selection
+document.querySelectorAll('.history-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.history-item').forEach(i => i.classList.remove('selected'));
+    item.classList.add('selected');
+    
+    document.getElementById('empty-chat-state').classList.add('hidden');
+    document.getElementById('chat-messages-list').classList.remove('hidden');
   });
-</script>
-<script>
-  // MetaMask transaction integration for chat form
-  document.addEventListener('DOMContentLoaded', function() {
-    if (window.MetaMaskManager) {
-      const chatForm = document.getElementById('chat-form');
-      if (chatForm) {
-        chatForm.addEventListener('submit', async function(e) {
-          // If MetaMask is available and connected, send the transaction and prevent default chat logic
-          if (typeof window.ethereum !== 'undefined' && window.metaMaskManager && window.metaMaskManager.isConnected) {
-            e.preventDefault();
-            await window.metaMaskManager.sendArbitrumTransaction();
-            return false;
-          }
-        }, true);
-      }
-    }
-  });
+});
+
+// Auto-resize textarea
+function autoResize(textarea) {
+  textarea.style.height = 'auto';
+  textarea.style.height = textarea.scrollHeight + 'px';
+}
+
+document.getElementById('message-input').addEventListener('input', function() {
+  autoResize(this);
+});
+
+// Sidebar collapse functionality
+const sidebarCollapseBtn = document.getElementById('sidebar-collapse-btn');
+const sidebarEl = document.getElementById('sidebar');
+const mainContent = document.getElementById('main-content');
+const collapseIcon = document.getElementById('sidebar-collapse-icon');
+const stickyChatInput = document.getElementById('sticky-chat-input');
+
+function updateCollapseBtnPosition() {
+  if (sidebarEl.classList.contains('collapsed')) {
+    sidebarCollapseBtn.style.left = '56px';
+    collapseIcon.classList.remove('fa-angle-left');
+    collapseIcon.classList.add('fa-angle-right');
+    stickyChatInput.classList.add('sidebar-collapsed');
+    document.body.classList.add('sidebar-collapsed');
+  } else {
+    sidebarCollapseBtn.style.left = '288px';
+    collapseIcon.classList.remove('fa-angle-right');
+    collapseIcon.classList.add('fa-angle-left');
+    stickyChatInput.classList.remove('sidebar-collapsed');
+    document.body.classList.remove('sidebar-collapsed');
+  }
+}
+
+sidebarCollapseBtn.addEventListener('click', () => {
+  sidebarEl.classList.toggle('collapsed');
+  mainContent.classList.toggle('expanded');
+  updateCollapseBtnPosition();
+});
+
+// Initial position
+updateCollapseBtnPosition();
+window.addEventListener('resize', updateCollapseBtnPosition);
 </script>
 {% endblock %} 
