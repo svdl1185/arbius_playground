@@ -24,8 +24,8 @@
   }
   
   .cta-button {
-    background: white;
-    color: black;
+    background: rgba(0,0,0,0.55);
+    color: white;
     font-weight: 600;
     padding: 1rem 2.5rem;
     border-radius: 50px;
@@ -35,12 +35,16 @@
     gap: 0.75rem;
     transition: all 0.3s ease;
     font-size: 1.1rem;
+    border: 1.5px solid white;
+    box-shadow: none;
+    backdrop-filter: blur(2px);
   }
   
   .cta-button:hover {
+    background: rgba(0,0,0,0.75);
+    color: #fff;
     transform: translateY(-2px);
-    box-shadow: 0 10px 30px rgba(255, 255, 255, 0.2);
-    color: black;
+    box-shadow: 0 10px 30px rgba(255, 255, 255, 0.08);
   }
   
   .grid-pattern {
@@ -149,6 +153,19 @@
       font-size: 1rem;
     }
   }
+  .wallet-btn-outline {
+    background: rgba(0,0,0,0.55) !important;
+    color: white !important;
+    border: 1.5px solid white !important;
+    box-shadow: none !important;
+    transition: background 0.2s, color 0.2s, border 0.2s;
+    backdrop-filter: blur(2px);
+  }
+  .wallet-btn-outline:hover, .wallet-btn-outline:focus {
+    background: rgba(0,0,0,0.75) !important;
+    color: #fff !important;
+    border-color: #fff !important;
+  }
 </style>
 {% endblock %}
 
@@ -157,7 +174,7 @@
 <nav class="nav-glass w-full fixed top-0 z-30 transition-all duration-300">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16 relative">
     <!-- Logo and Name on Left -->
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-3" style="margin-left: -36px;">
       <a href="{% url 'home' %}" class="flex items-center gap-2 font-bold text-2xl text-white">
         <img src="{% static 'arbius.ef337b97.svg' %}" alt="Arbius Logo" class="inline-block w-7 h-7" />
         Arbius
@@ -184,7 +201,7 @@
         </div>
         <!-- Connect Button -->
         <button id="connect-wallet-btn"
-          class="bg-white text-black px-4 py-2.5 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 hover:scale-105">
+          class="wallet-btn-outline px-4 py-2.5 rounded-xl font-semibold transition flex items-center gap-2" style="">
           <i class="fas fa-wallet"></i> Connect Wallet
         </button>
       </div>
@@ -192,7 +209,7 @@
       <!-- Mobile Wallet Section -->
       <div class="md:hidden flex items-center gap-2">
         <button id="connect-wallet-btn-mobile"
-          class="bg-white text-black px-4 py-2.5 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 hover:scale-105">
+          class="wallet-btn-outline px-4 py-2.5 rounded-xl font-semibold transition flex items-center gap-2" style="">
           <i class="fas fa-wallet"></i> Connect
         </button>
       </div>
@@ -277,40 +294,6 @@
         <div class="feature-icon"><i class="fas fa-globe"></i></div>
         <h3 class="feature-title">Global Network</h3>
         <p class="feature-description">Distributed network of miners worldwide ensures low latency and high availability.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- How It Works Section -->
-<section class="section bg-darkbg">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <h2 class="section-title">How It Works</h2>
-    <p class="section-subtitle">Simple steps to get started with decentralized AI generation.</p>
-    
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-      <div class="text-center">
-        <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
-          <i class="fas fa-wallet text-black text-xl"></i>
-        </div>
-        <h3 class="text-xl font-semibold text-white mb-2">1. Connect Wallet</h3>
-        <p class="text-textmuted">Connect your Web3 wallet (MetaMask, WalletConnect, etc.) to access the platform.</p>
-      </div>
-      
-      <div class="text-center">
-        <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
-          <i class="fas fa-edit text-black text-xl"></i>
-        </div>
-        <h3 class="text-xl font-semibold text-white mb-2">2. Write Prompt</h3>
-        <p class="text-textmuted">Enter your prompt and select the AI model you want to use for generation.</p>
-      </div>
-      
-      <div class="text-center">
-        <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
-          <i class="fas fa-magic text-black text-xl"></i>
-        </div>
-        <h3 class="text-xl font-semibold text-white mb-2">3. Get Results</h3>
-        <p class="text-textmuted">Receive your AI-generated content and pay only for the computation used.</p>
       </div>
     </div>
   </div>

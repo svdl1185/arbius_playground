@@ -46,10 +46,49 @@
   }
   
   .history-filter-pill {
-    @apply px-4 py-1 rounded-full bg-white/10 text-white text-xs font-semibold transition hover:bg-white/20 focus:outline-none;
+    @apply bg-transparent p-0 rounded-full transition focus:outline-none;
+    box-shadow: none;
   }
-  .history-filter-pill.active {
-    @apply bg-white text-black shadow;
+  .history-filter-pill .filter-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 50%;
+    color: white;
+    font-size: 0.95rem;
+    transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+    margin: 0 auto;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  }
+  .history-filter-pill.active .filter-circle {
+    background: white;
+    color: #111;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  }
+  .history-filter-pill:hover .filter-circle {
+    background: rgba(255,255,255,0.22);
+    color: #fff;
+  }
+  .history-filter-pill span.filter-circle {
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+  .history-filter-pill {
+    min-width: 32px;
+    min-height: 32px;
+    padding: 0;
+    margin: 0 2px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: none;
+    box-shadow: none;
   }
   .history-item {
     @apply flex items-center gap-2 px-3 py-2 rounded-lg text-textmuted cursor-pointer hover:bg-white/10 hover:text-white transition text-base;
@@ -158,22 +197,35 @@
   .sidebar-collapsed #sticky-chat-input {
     max-width: 900px !important;
   }
+  /* New style for prominent buttons */
+  .btn-outline-white {
+    background: black !important;
+    color: white !important;
+    border: 1.5px solid white !important;
+    box-shadow: none !important;
+    transition: background 0.2s, color 0.2s, border 0.2s;
+  }
+  .btn-outline-white:hover, .btn-outline-white:focus {
+    background: #181818 !important;
+    color: #fff !important;
+    border-color: #fff !important;
+  }
 </style>
 {% endblock %}
 
 {% block content %}
 <!-- Navigation -->
 <nav class="nav-glass w-full fixed top-0 z-30 transition-all duration-300">
-  <div class="max-w-7xl mx-auto px-0 sm:px-0 lg:px-0 flex items-center justify-between h-16 relative">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16 relative">
     <!-- Logo and Name on Left -->
-    <div class="flex items-center gap-3 pl-6">
+    <div class="flex items-center gap-3" style="margin-left: -36px;">
       <a href="{% url 'home' %}" class="flex items-center gap-2 font-bold text-2xl text-white">
         <img src="{% static 'arbius.ef337b97.svg' %}" alt="Arbius Logo" class="inline-block w-7 h-7" />
         Arbius
       </a>
     </div>
     <!-- Wallet/Actions all the way on Right -->
-    <div class="flex items-center gap-3 ml-auto pr-6">
+    <div class="flex items-center gap-3 ml-auto">
       <!-- Desktop Wallet Section -->
       <div class="hidden md:flex items-center gap-3">
         <!-- Connected State -->
@@ -186,14 +238,14 @@
         </div>
         <!-- Connect Button -->
         <button id="connect-wallet-btn"
-          class="bg-white text-black px-4 py-2.5 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 hover:scale-105">
+          class="btn-outline-white px-4 py-2.5 rounded-xl font-semibold transition flex items-center gap-2" style="">
           <i class="fas fa-wallet"></i> Connect Wallet
         </button>
       </div>
       <!-- Mobile Wallet Section -->
       <div class="md:hidden flex items-center gap-2">
         <button id="connect-wallet-btn-mobile"
-          class="bg-white text-black px-4 py-2.5 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 hover:scale-105">
+          class="btn-outline-white px-4 py-2.5 rounded-xl font-semibold transition flex items-center gap-2" style="">
           <i class="fas fa-wallet"></i> Connect
         </button>
       </div>
@@ -210,7 +262,7 @@
   <aside id="sidebar" class="sidebar fixed top-0 left-0 h-screen w-72 bg-cardbg border-r border-border z-50 md:relative md:w-72 md:h-screen md:border-r md:shadow-lg md:bg-cardbg md:flex md:flex-col md:static">
     <div class="sidebar-content flex flex-col gap-4 p-6 h-full">
       <!-- New Chat Button -->
-      <button id="new-chat-btn" class="w-full bg-white text-black font-semibold py-2 rounded-xl flex items-center justify-center gap-2 hover:scale-105 transition text-base shadow">
+      <button id="new-chat-btn" class="w-full btn-outline-white font-semibold py-2 rounded-xl flex items-center justify-center gap-2 transition text-base" style="">
         <i class="fas fa-plus"></i> New Chat
       </button>
       <!-- History Label -->
@@ -294,7 +346,7 @@
 <!-- Sticky Chat Input (always visible at the bottom) -->
 <div id="sticky-chat-input" class="fixed bottom-6 z-30 transition-all duration-300" style="left: 0; margin-left: 288px; width: calc(100vw - 288px); max-width: none; transform: none;">
   <form id="chat-form" class="w-full max-w-3xl mx-auto flex items-center justify-center" autocomplete="off" style="background: none; box-shadow: none; max-width: 900px;">
-    <div class="flex w-full items-center bg-black/80 border border-border rounded-full pl-4 pr-1 py-2 shadow-lg backdrop-blur-md" style="box-shadow: 0 6px 32px 0 rgba(0,0,0,0.18);">
+    <div class="flex w-full items-center bg-black/80 border border-white rounded-full pl-4 pr-1 py-2 shadow-lg backdrop-blur-md" style="box-shadow: 0 6px 32px 0 rgba(0,0,0,0.18); border: 1.5px solid white;">
       <textarea 
         id="message-input" 
         placeholder="Type your message..." 
