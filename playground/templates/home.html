@@ -1,0 +1,487 @@
+{% extends 'base.html' %}
+
+{% block title %}Arbius - Decentralized AI Generation{% endblock %}
+
+{% block extra_css %}
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+  
+  .gradient-text {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .hero-gradient {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+  }
+  
+  .floating-question {
+    position: absolute;
+    font-weight: 500;
+    color: rgba(148, 163, 184, 0.3);
+    pointer-events: none;
+    user-select: none;
+    transition: all 0.3s ease;
+  }
+  
+  .feature-card {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(51, 65, 85, 0.4) 100%);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    transition: all 0.3s ease;
+  }
+  
+  .feature-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  }
+  
+  .try-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .try-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+  }
+  
+  .try-button:hover::before {
+    left: 100%;
+  }
+  
+  .try-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+  }
+  
+  .stats-card {
+    background: rgba(30, 41, 59, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+  }
+  
+  .grid-pattern {
+    background-image: 
+      linear-gradient(rgba(148, 163, 184, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
+  
+  .how-arbius-works-title {
+    font-size: 2.8rem;
+    font-weight: 800;
+    margin-bottom: 2.5rem;
+    letter-spacing: -0.03em;
+  }
+  
+  .how-arbius-works-desc {
+    font-size: 1.5rem;
+    margin-bottom: 3.5rem;
+    color: #cbd5e1;
+    font-weight: 500;
+  }
+  
+  .how-arbius-works-step {
+    background: linear-gradient(135deg, rgba(30,41,59,0.95) 0%, rgba(51,65,85,0.7) 100%);
+    border-radius: 1.5rem;
+    padding: 2.5rem 1.5rem;
+    box-shadow: 0 6px 32px 0 rgba(16,23,42,0.12);
+    border: 1.5px solid rgba(148,163,184,0.10);
+    min-width: 200px;
+    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: transform 0.2s;
+  }
+  
+  .how-arbius-works-step:hover {
+    transform: translateY(-6px) scale(1.03);
+    border-color: #6366f1;
+  }
+  
+  .how-arbius-works-step-number {
+    width: 4.5rem;
+    height: 4.5rem;
+    font-size: 2.2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 16px 0 rgba(102,126,234,0.15);
+  }
+  
+  .how-arbius-works-step-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.7rem;
+    letter-spacing: -0.01em;
+  }
+  
+  .how-arbius-works-step-desc {
+    font-size: 1.08rem;
+    color: #cbd5e1;
+    font-weight: 400;
+    line-height: 1.6;
+  }
+  
+  @media (max-width: 900px) {
+    .how-arbius-works-title { font-size: 2.1rem; }
+    .how-arbius-works-desc { font-size: 1.1rem; }
+    .how-arbius-works-step { min-height: 260px; padding: 1.5rem 0.7rem; }
+    .how-arbius-works-step-number { width: 3.2rem; height: 3.2rem; font-size: 1.3rem; }
+    .how-arbius-works-step-title { font-size: 1.1rem; }
+    .how-arbius-works-step-desc { font-size: 0.98rem; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-gradient min-h-screen relative overflow-hidden flex items-center justify-center">
+  <!-- Background Pattern -->
+  <div class="absolute inset-0 grid-pattern opacity-20"></div>
+  
+  <!-- Floating Questions Background -->
+  <div id="questions-bg" class="absolute inset-0 pointer-events-none"></div>
+  
+  <!-- Main Content -->
+  <div class="relative z-10 text-center">
+    <a href="{% url 'playground' %}" class="try-button text-white font-semibold px-12 py-4 rounded-full text-xl flex items-center gap-3 group">
+      <i class="fas fa-rocket group-hover:rotate-12 transition-transform"></i>
+      Try now
+    </a>
+  </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-24 bg-gradient-to-b from-gray-900 to-gray-800 min-h-screen flex items-center justify-center">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+    <div class="text-center mb-20">
+      <h2 class="how-arbius-works-title gradient-text">How Arbius Works</h2>
+      <p class="how-arbius-works-desc">
+        Learn how decentralized AI creates and stores <span class="font-semibold">text and images</span> permanently on the blockchain.
+      </p>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
+      <!-- Step 1 -->
+      <div class="how-arbius-works-step">
+        <div class="how-arbius-works-step-number">1</div>
+        <div class="how-arbius-works-step-title">Request Submitted</div>
+        <div class="how-arbius-works-step-desc">
+          A user submits an AI generation request (text or image) to the Arbius protocol, including their prompt and payment.
+        </div>
+      </div>
+      <!-- Step 2 -->
+      <div class="how-arbius-works-step">
+        <div class="how-arbius-works-step-number">2</div>
+        <div class="how-arbius-works-step-title">Miner Processing</div>
+        <div class="how-arbius-works-step-desc">
+          Decentralized miners compete to fulfill the request using their AI models and computing power.
+        </div>
+      </div>
+      <!-- Step 3 -->
+      <div class="how-arbius-works-step">
+        <div class="how-arbius-works-step-number">3</div>
+        <div class="how-arbius-works-step-title">Result Submission</div>
+        <div class="how-arbius-works-step-desc">
+          The winning miner submits the generated text or image and receives payment through the blockchain.
+        </div>
+      </div>
+      <!-- Step 4 -->
+      <div class="how-arbius-works-step">
+        <div class="how-arbius-works-step-number">4</div>
+        <div class="how-arbius-works-step-title">IPFS Storage</div>
+        <div class="how-arbius-works-step-desc">
+          The result is stored on IPFS for decentralized, permanent access.
+        </div>
+      </div>
+      <!-- Step 5 -->
+      <div class="how-arbius-works-step">
+        <div class="how-arbius-works-step-number">5</div>
+        <div class="how-arbius-works-step-title">Gallery Discovery</div>
+        <div class="how-arbius-works-step-desc">
+          Our system automatically discovers and displays new text and images by monitoring blockchain events.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Why Decentralized AI Matters Section -->
+<section class="py-20 bg-gradient-to-b from-gray-900 to-gray-800">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <!-- Feature 1 -->
+      <div class="feature-card rounded-2xl p-8">
+        <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mb-6">
+          <i class="fas fa-unlock text-2xl text-white"></i>
+        </div>
+        <h3 class="text-2xl font-bold mb-4 text-white">Open Access</h3>
+        <p class="text-gray-400 leading-relaxed">
+          No gatekeepers or restrictions. Anyone can participate in the network as a user or miner.
+        </p>
+      </div>
+      
+      <!-- Feature 2 -->
+      <div class="feature-card rounded-2xl p-8">
+        <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-blue-600 rounded-xl flex items-center justify-center mb-6">
+          <i class="fas fa-users text-2xl text-white"></i>
+        </div>
+        <h3 class="text-2xl font-bold mb-4 text-white">Community Models</h3>
+        <p class="text-gray-400 leading-relaxed">
+          Anyone can register and use their own AI models on the Arbius playground, creating a diverse ecosystem of Stable Diffusion variants, custom fine-tuned models, and experimental approaches.
+        </p>
+      </div>
+      
+      <!-- Feature 3 -->
+      <div class="feature-card rounded-2xl p-8">
+        <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center mb-6">
+          <i class="fas fa-leaf text-2xl text-white"></i>
+        </div>
+        <h3 class="text-2xl font-bold mb-4 text-white">Energy Efficient</h3>
+        <p class="text-gray-400 leading-relaxed">
+          Proof of Useful Work combines traditional mining with AI computation, making energy use more efficient and environmentally friendly.
+        </p>
+      </div>
+      
+      <!-- Feature 4 -->
+      <div class="feature-card rounded-2xl p-8">
+        <div class="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center mb-6">
+          <i class="fas fa-infinity text-2xl text-white"></i>
+        </div>
+        <h3 class="text-2xl font-bold mb-4 text-white">Permanence</h3>
+        <p class="text-gray-400 leading-relaxed">
+          Images are stored permanently on IPFS, ensuring they remain accessible for years to come.
+        </p>
+      </div>
+      
+      <!-- Feature 5 -->
+      <div class="feature-card rounded-2xl p-8">
+        <div class="w-16 h-16 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-xl flex items-center justify-center mb-6">
+          <i class="fas fa-shield-alt text-2xl text-white"></i>
+        </div>
+        <h3 class="text-2xl font-bold mb-4 text-white">Blockchain Verified</h3>
+        <p class="text-gray-400 leading-relaxed">
+          Every image creation is recorded on Arbitrum blockchain, making all transactions and computations publicly verifiable and transparent.
+        </p>
+      </div>
+      
+      <!-- Feature 6 -->
+      <div class="feature-card rounded-2xl p-8">
+        <div class="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center mb-6">
+          <i class="fas fa-rocket text-2xl text-white"></i>
+        </div>
+        <h3 class="text-2xl font-bold mb-4 text-white">Try It Now</h3>
+        <p class="text-gray-400 leading-relaxed">
+          Experience decentralized AI image generation firsthand. Submit your prompt and see the power of blockchain-based AI.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const QUESTIONS = [
+  "Is monogamy natural?",
+  "Do aliens exist?",
+  "Is free will an illusion?",
+  "Can money buy happiness?",
+  "Is privacy dead?",
+  "Why do people cheat?",
+  "Is censorship ever justified?",
+  "Are some lies necessary?",
+  "Is AI dangerous?",
+  "Should voting be mandatory?",
+  "Is euthanasia ethical?",
+  "Can you love more than one person?",
+  "Is the death penalty justified?",
+  "Are humans inherently selfish?",
+  "Is religion necessary for morality?",
+  "Should drugs be legalized?",
+  "Is cloning humans ethical?",
+  "Is the world getting better or worse?",
+  "Are we living in a simulation?",
+  "Is it okay to break the law for a good reason?",
+  "Should parents be allowed to genetically modify their children?",
+  "Is social media destroying society?",
+  "Is it possible to truly forgive?",
+  "Are some cultures superior to others?",
+  "Is patriotism dangerous?",
+  "Should animals have the same rights as humans?",
+  "Is it ever okay to lie?",
+  "Is the customer always right?",
+  "Should we fear death?",
+  "Is war ever justified?",
+  "Is it possible to be truly unbiased?",
+  "Are men and women really that different?",
+  "Is it okay to keep secrets from loved ones?",
+  "Should everyone go to college?",
+  "Is it wrong to eat meat?",
+  "Is technology making us less human?",
+  "Is it possible to be truly selfless?",
+  "Should voting age be lowered?",
+  "Is it okay to use animals for scientific research?",
+  "Is beauty subjective or objective?",
+  "Should parents be friends with their children?",
+  "Is it okay to be rich in a poor world?",
+  "Is love just a chemical reaction?",
+  "Should we colonize other planets?",
+  "Is it okay to use AI for surveillance?",
+  "Is it possible to predict the future?",
+  "Should art be censored?",
+  "Is it okay to use performance-enhancing drugs?",
+  "Is it possible to be happy all the time?",
+  "Should we trust the media?",
+  "Is it okay to be selfish sometimes?",
+  "Is it possible to change your personality?",
+  "Should we fear artificial intelligence?",
+  "Is it okay to question authority?",
+  "Is it possible to live without regrets?",
+  "Should we forgive and forget?",
+  "Is it okay to be average?",
+  "Is it possible to be too honest?",
+  "Should we always follow our dreams?",
+  "Is it okay to give up?",
+  "Is it possible to love someone forever?",
+  "Should we always tell the truth?",
+  "Is it okay to be different?",
+  "Is it possible to be truly free?",
+  "Should we always help others?",
+  "Is it okay to be proud?",
+  "Is it possible to be too kind?",
+  "Should we always forgive?",
+  "Is it okay to be ambitious?",
+  "Is it possible to be too ambitious?",
+  "Should we always be optimistic?",
+  "Is it okay to be pessimistic?",
+  "Is it possible to be too optimistic?",
+  "Should we always be realistic?",
+  "Is it okay to be unrealistic?",
+  "Is it possible to be too realistic?",
+  "Should we always be logical?",
+  "Is it okay to be illogical?",
+  "Is it possible to be too logical?",
+  "Should we always be emotional?",
+  "Is it okay to be unemotional?",
+  "Is it possible to be too emotional?",
+  "Should we always be rational?",
+  "Is it okay to be irrational?",
+  "Is it possible to be too rational?",
+  "Should we always be creative?",
+  "Is it okay to be uncreative?",
+  "Is it possible to be too creative?",
+  "Should we always be original?",
+  "Is it okay to be unoriginal?",
+  "Is it possible to be too original?",
+  "Should we always be unique?",
+  "Is it okay to be ordinary?",
+  "Is it possible to be too unique?",
+  "Should we always be normal?",
+  "Is it okay to be abnormal?",
+  "Is it possible to be too normal?"
+];
+
+const TOTAL_QUESTIONS = 40;
+const questionsBg = document.getElementById('questions-bg');
+const vw = () => Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+const vh = () => Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+
+function randomBetween(a, b) {
+  return a + Math.random() * (b - a);
+}
+
+function createQuestionEl(text) {
+  const el = document.createElement('span');
+  el.textContent = text;
+  el.className = 'floating-question text-sm md:text-base font-medium';
+  return el;
+}
+
+function animateQuestion(el) {
+  // Position questions to avoid the main content area
+  const centerX = vw() / 2;
+  const centerY = vh() / 2;
+  const clearRadius = 200;
+  
+  let startX, startY;
+  do {
+    startX = randomBetween(0, vw());
+    startY = randomBetween(0, vh());
+  } while (
+    Math.sqrt((startX - centerX) ** 2 + (startY - centerY) ** 2) < clearRadius
+  );
+
+  const startScale = 0.3;
+  const endScale = randomBetween(1.2, 1.8);
+  const startOpacity = 0.05;
+  const midOpacity = 0.6;
+  const endOpacity = 0;
+
+  const totalDuration = randomBetween(10, 15);
+  const fadeInDuration = totalDuration * 0.4;
+  const fadeOutDuration = totalDuration * 0.3;
+
+  el.style.left = `${startX}px`;
+  el.style.top = `${startY}px`;
+  el.style.opacity = startOpacity;
+  el.style.transform = `scale(${startScale})`;
+
+  setTimeout(() => {
+    el.style.transition = `opacity ${fadeInDuration}s ease-out, transform ${totalDuration}s cubic-bezier(0.22,1,0.36,1)`;
+    el.style.opacity = midOpacity;
+    el.style.transform = `scale(${endScale})`;
+  }, 10);
+
+  setTimeout(() => {
+    el.style.transition = `opacity ${fadeOutDuration}s ease-in`;
+    el.style.opacity = endOpacity;
+  }, (totalDuration - fadeOutDuration) * 1000);
+
+  setTimeout(() => {
+    el.remove();
+    spawnQuestion();
+  }, totalDuration * 1000);
+}
+
+function spawnQuestion() {
+  const text = QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)];
+  const el = createQuestionEl(text);
+  questionsBg.appendChild(el);
+  animateQuestion(el);
+}
+
+// Initial spawn
+for (let i = 0; i < TOTAL_QUESTIONS; i++) {
+  setTimeout(spawnQuestion, Math.random() * 3000);
+}
+
+// Responsive: reflow on resize
+window.addEventListener('resize', () => {
+  questionsBg.innerHTML = '';
+  for (let i = 0; i < TOTAL_QUESTIONS; i++) {
+    setTimeout(spawnQuestion, Math.random() * 3000);
+  }
+});
+</script>
+{% endblock %} 

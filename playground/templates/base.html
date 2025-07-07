@@ -1,0 +1,180 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Arbius Playground{% endblock %}</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              primary: '#6366f1',
+              secondary: '#8b5cf6',
+              darkbg: '#0f172a',
+              cardbg: '#1e293b',
+              textlight: '#f1f5f9',
+              textmuted: '#94a3b8',
+            },
+            fontFamily: {
+              sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+            },
+          },
+        },
+      }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    {% block extra_css %}{% endblock %}
+    <style>
+      .nav-glass {
+        background: rgba(15,23,42,0.7);
+        backdrop-filter: blur(16px);
+        box-shadow: 0 2px 24px 0 rgba(16,23,42,0.10);
+      }
+      .nav-link {
+        @apply text-textmuted hover:text-white transition px-3 py-2 rounded-lg font-medium;
+      }
+      .nav-link-active {
+        @apply text-white bg-primary/20;
+      }
+      .nav-wallet-connected {
+        @apply bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2.5 rounded-xl font-semibold shadow-lg transition-all duration-300 flex items-center gap-2;
+      }
+      .nav-wallet-address {
+        @apply bg-[#232b45] text-textmuted px-3 py-2 rounded-lg text-xs font-mono border border-[#334155];
+      }
+      .nav-wallet-balance {
+        @apply bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 px-3 py-2 rounded-lg text-xs font-semibold border border-yellow-500/30;
+      }
+      .nav-mobile-menu {
+        background: rgba(15,23,42,0.98);
+        backdrop-filter: blur(24px);
+      }
+      .wallet-status-indicator {
+        @apply w-2 h-2 rounded-full bg-green-400 animate-pulse;
+      }
+      .wallet-dropdown {
+        @apply absolute top-full right-0 mt-2 w-64 bg-cardbg border border-[#334155] rounded-xl shadow-xl backdrop-blur-lg z-50;
+      }
+    </style>
+</head>
+<body class="bg-darkbg text-textlight font-sans min-h-screen flex flex-col">
+    <!-- Navigation -->
+    <nav class="nav-glass w-full fixed top-0 z-30 transition-all duration-300">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16 relative">
+        <!-- Logo -->
+        <div class="flex items-center gap-3">
+          <a href="{% url 'home' %}" class="flex items-center gap-2 font-bold text-2xl text-white">
+            <span class="inline-block w-7 h-7 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center">
+              <i class="fas fa-brain text-white text-lg"></i>
+            </span>
+            Arbius
+          </a>
+        </div>
+        <!-- Wallet/Actions -->
+        <div class="flex items-center gap-3">
+          <!-- Desktop Wallet Section -->
+          <div class="hidden md:flex items-center gap-3">
+            <!-- Connected State -->
+            <div id="wallet-connected-container" class="flex items-center gap-4 bg-[#232b45]/80 border border-[#334155] shadow-xl rounded-2xl px-6 py-3 transition-all duration-300" style="display: none;">
+              <div class="flex flex-col items-start justify-center">
+                <div class="flex items-center gap-2">
+                  <span class="text-white text-lg font-mono tracking-wider select-all cursor-pointer hover:text-primary transition" id="wallet-address"></span>
+                </div>
+                <span class="text-xs text-textmuted mt-1" id="wallet-network"></span>
+              </div>
+              <div id="aius-balance" class="ml-6 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-300 px-4 py-2 rounded-full text-base font-bold border border-yellow-500/30 shadow-sm flex items-center" style="display: none;"></div>
+              <button id="disconnect-wallet-btn" class="ml-6 w-10 h-10 flex items-center justify-center rounded-full border border-red-500/30 bg-red-600/10 text-red-400 hover:bg-red-600/30 hover:text-white transition-all duration-200 shadow group relative" title="Disconnect Wallet">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="absolute left-1/2 -translate-x-1/2 top-12 text-xs bg-red-700 text-white px-2 py-1 rounded shadow opacity-0 group-hover:opacity-100 transition pointer-events-none">Disconnect</span>
+              </button>
+            </div>
+            <!-- Connect Button -->
+            <button id="connect-wallet-btn"
+              class="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-4 py-2.5 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 hover:scale-105">
+              <i class="fas fa-wallet"></i> Connect Wallet
+            </button>
+          </div>
+          
+          <!-- Mobile Wallet Section -->
+          <div class="md:hidden flex items-center gap-2">
+            <button id="connect-wallet-btn-mobile"
+              class="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-4 py-2.5 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 hover:scale-105">
+              <i class="fas fa-wallet"></i> Connect
+            </button>
+          </div>
+          
+          <!-- Hamburger for mobile -->
+          <button id="nav-mobile-toggle" class="md:hidden flex items-center justify-center w-10 h-10 rounded-lg hover:bg-[#232b45] transition">
+            <i class="fas fa-bars text-xl"></i>
+          </button>
+        </div>
+      </div>
+      <!-- Mobile Menu -->
+      <div id="nav-mobile-menu" class="nav-mobile-menu fixed top-16 left-0 w-full py-6 px-6 flex flex-col gap-4 md:hidden hidden z-40">
+        <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}nav-link-active{% endif %}">Home</a>
+        <a href="{% url 'playground' %}" class="nav-link {% if request.resolver_match.url_name == 'playground' %}nav-link-active{% endif %}">Playground</a>
+        
+        <!-- Mobile Connected State -->
+        <div id="wallet-connected-mobile" class="flex flex-col gap-3" style="display: none;">
+          <div class="flex items-center gap-2 bg-[#232b45] px-4 py-3 rounded-lg border border-[#334155]">
+            <div class="wallet-status-indicator"></div>
+            <span id="wallet-address-mobile" class="text-textmuted text-sm font-mono"></span>
+          </div>
+          <div id="aius-balance-mobile" class="nav-wallet-balance w-full justify-center" style="display: none;"></div>
+          <button id="disconnect-wallet-btn-mobile" class="bg-red-600/20 text-red-400 px-4 py-3 rounded-lg text-sm font-semibold border border-red-500/30 hover:bg-red-600/30 transition-all duration-200 w-full justify-center">
+            <i class="fas fa-sign-out-alt"></i> Disconnect Wallet
+          </button>
+        </div>
+      </div>
+      <script>
+        const navToggle = document.getElementById('nav-mobile-toggle');
+        const navMenu = document.getElementById('nav-mobile-menu');
+        navToggle.addEventListener('click', () => {
+          navMenu.classList.toggle('hidden');
+        });
+        window.addEventListener('resize', () => {
+          if(window.innerWidth >= 768) navMenu.classList.add('hidden');
+        });
+      </script>
+    </nav>
+    <main class="flex-1 w-full pt-20">
+        {% block content %}{% endblock %}
+    </main>
+    <!-- Footer -->
+    <footer class="bg-darkbg border-t border-[#1e293b] py-10 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+            <div>
+                <h5 class="text-lg font-bold mb-2">Arbius</h5>
+                <p class="text-textmuted max-w-xs">Decentralized machine learning network powered by AIUS and Proof-of-Useful-Work.</p>
+            </div>
+            <div class="flex flex-col md:flex-row gap-8">
+                <div>
+                    <h6 class="font-semibold mb-2">Resources</h6>
+                    <ul class="space-y-1">
+                        <li><a href="#" class="text-textmuted hover:text-white">Blog</a></li>
+                        <li><a href="#" class="text-textmuted hover:text-white">veAIUS</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h6 class="font-semibold mb-2">Community</h6>
+                    <ul class="space-y-1">
+                        <li><a href="#" class="text-textmuted hover:text-white flex items-center gap-2"><i class="fab fa-github"></i> Github</a></li>
+                        <li><a href="#" class="text-textmuted hover:text-white flex items-center gap-2"><i class="fab fa-twitter"></i> Twitter</a></li>
+                        <li><a href="#" class="text-textmuted hover:text-white flex items-center gap-2"><i class="fab fa-telegram"></i> Telegram</a></li>
+                        <li><a href="#" class="text-textmuted hover:text-white flex items-center gap-2"><i class="fab fa-discord"></i> Discord</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="text-center text-textmuted mt-8 text-sm">&copy; 2025 Arbius. All rights reserved.</div>
+    </footer>
+    {% block extra_js %}{% endblock %}
+    <!-- MetaMask Integration -->
+    <script src="{% static 'js/metamask.js' %}"></script>
+</body>
+</html> 

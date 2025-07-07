@@ -1,0 +1,427 @@
+{% extends 'base.html' %}
+
+{% block title %}Arbius Playground - Chat{% endblock %}
+
+{% block extra_css %}
+<style>
+  .chat-message {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .model-card {
+    transition: all 0.2s ease;
+  }
+  
+  .model-card:hover {
+    transform: translateY(-2px);
+  }
+  
+  .model-card.selected {
+    border-color: #6366f1;
+    background: rgba(99, 102, 241, 0.1);
+  }
+  
+  .chat-container {
+    height: calc(100vh - 200px);
+  }
+  
+  .message-input {
+    resize: none;
+    min-height: 44px;
+    max-height: 120px;
+  }
+  
+  .typing-indicator {
+    display: none;
+  }
+  
+  .typing-indicator.active {
+    display: flex;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col bg-gradient-to-b from-[#181f3a] to-[#10172a]">
+  <div class="flex flex-1 min-h-0 w-full gap-6 px-6 py-4" style="height: calc(100vh - 4rem);">
+    
+    <!-- Sidebar -->
+    <aside class="w-80 bg-[#181f3a] rounded-2xl p-6 flex flex-col gap-6 shadow-lg border border-[#232b45] h-full min-h-0">
+      <!-- New Chat Button -->
+      <button id="new-chat-btn" class="w-full bg-gradient-to-r from-primary to-secondary text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 hover:scale-105 transition">
+        <i class="fas fa-plus"></i> New Chat
+      </button>
+      
+      <!-- Search -->
+      <div class="relative">
+        <input type="text" id="chat-search" placeholder="Search chats..." class="w-full bg-[#232b45] text-textlight rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+        <i class="fas fa-search absolute right-3 top-3 text-textmuted"></i>
+      </div>
+      
+      <!-- Chat History -->
+      <div class="flex-1 overflow-y-auto min-h-0">
+        <h3 class="text-sm font-semibold text-textmuted mb-3">History</h3>
+        <div class="space-y-2" id="chat-history">
+          <!-- Placeholder previous chats -->
+          <div class="flex items-center gap-2 bg-[#232b45] rounded-lg px-3 py-2 text-textlight cursor-pointer hover:bg-[#222b45]">
+            <i class="fas fa-comment-dots text-primary"></i>
+            <span class="truncate flex-1">What is Roko's Basilisk?</span>
+          </div>
+          <div class="flex items-center gap-2 bg-[#232b45] rounded-lg px-3 py-2 text-textlight cursor-pointer hover:bg-[#222b45]">
+            <i class="fas fa-comment-dots text-primary"></i>
+            <span class="truncate flex-1">How to train a Belgian Malinois</span>
+          </div>
+          <div class="flex items-center gap-2 bg-[#232b45] rounded-lg px-3 py-2 text-textlight cursor-pointer hover:bg-[#222b45]">
+            <i class="fas fa-image text-secondary"></i>
+            <span class="truncate flex-1">Elon Musk naked with...</span>
+          </div>
+          <div class="flex items-center gap-2 bg-[#232b45] rounded-lg px-3 py-2 text-textlight cursor-pointer hover:bg-[#222b45]">
+            <i class="fas fa-comment-dots text-primary"></i>
+            <span class="truncate flex-1">Koala</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Chat Area -->
+    <section class="flex-1 flex flex-col h-full min-h-0 bg-[#181f3a] rounded-2xl shadow-lg border border-[#232b45]">
+      
+      <!-- Chat Header -->
+      <div class="p-6 border-b border-[#232b45] flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
+            <i class="fas fa-brain text-white"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-semibold text-white">M8B-Uncensored</h2>
+            <p class="text-textmuted text-sm">Text Generation Model</p>
+          </div>
+        </div>
+        <button id="model-selector-btn" class="bg-[#232b45] text-white px-4 py-2 rounded-xl text-sm hover:bg-[#2a3345] transition">
+          Change Model
+        </button>
+      </div>
+      
+      <!-- Chat Messages -->
+      <div class="flex-1 overflow-y-auto min-h-0 p-6" id="chat-messages">
+        <!-- Welcome Message -->
+        <div class="chat-message mb-6">
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-robot text-white text-sm"></i>
+            </div>
+            <div class="flex-1">
+              <div class="bg-[#232b45] rounded-2xl p-4 text-white">
+                <p class="mb-3">Hello! I'm M8B-Uncensored, a powerful language model. I can help you with:</p>
+                <ul class="space-y-1 text-sm text-textmuted">
+                  <li>• Creative writing and storytelling</li>
+                  <li>• Technical explanations and tutorials</li>
+                  <li>• Analysis and research assistance</li>
+                  <li>• General conversation and Q&A</li>
+                </ul>
+                <p class="mt-3 text-sm text-textmuted">What would you like to explore today?</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Typing Indicator -->
+        <div class="typing-indicator" id="typing-indicator">
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-robot text-white text-sm"></i>
+            </div>
+            <div class="bg-[#232b45] rounded-2xl p-4">
+              <div class="flex items-center gap-1">
+                <div class="w-2 h-2 bg-textmuted rounded-full animate-bounce"></div>
+                <div class="w-2 h-2 bg-textmuted rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                <div class="w-2 h-2 bg-textmuted rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Chat Input (no margin-top, always at bottom) -->
+      <div class="p-4 border-t border-[#232b45] mb-0">
+        <form id="chat-form" class="flex items-end gap-3">
+          <div class="flex-1">
+            <textarea 
+              id="message-input" 
+              placeholder="Type your message..." 
+              class="message-input w-full bg-[#232b45] text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+              rows="1"
+            ></textarea>
+          </div>
+          <button id="send-task-btn" type="submit" class="bg-gradient-to-r from-primary to-secondary text-white font-semibold px-6 py-3 rounded-xl shadow hover:scale-105 transition flex items-center gap-2">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </form>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- Model Selection Modal -->
+<div id="model-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden">
+  <div class="flex items-center justify-center min-h-screen p-4">
+    <div class="bg-[#181f3a] rounded-2xl p-6 w-full max-w-2xl border border-[#232b45]">
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="text-xl font-semibold text-white">Select Model</h3>
+        <button id="close-modal" class="text-textmuted hover:text-white">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Text Models -->
+        <div class="model-card bg-[#232b45] rounded-xl p-4 cursor-pointer border-2 border-transparent hover:border-primary/30" data-model="m8b-uncensored" data-type="text">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+              <i class="fas fa-brain text-white"></i>
+            </div>
+            <div>
+              <h4 class="font-semibold text-white">M8B-Uncensored</h4>
+              <p class="text-textmuted text-sm">Text Generation</p>
+            </div>
+          </div>
+          <p class="text-textmuted text-sm">Powerful uncensored language model for creative writing and analysis.</p>
+        </div>
+        
+        <div class="model-card bg-[#232b45] rounded-xl p-4 cursor-pointer border-2 border-transparent hover:border-primary/30" data-model="qwen-qwq" data-type="text">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center">
+              <i class="fas fa-brain text-white"></i>
+            </div>
+            <div>
+              <h4 class="font-semibold text-white">Qwen QwQ 32B</h4>
+              <p class="text-textmuted text-sm">Text Generation</p>
+            </div>
+          </div>
+          <p class="text-textmuted text-sm">Advanced 32B parameter model for complex reasoning tasks.</p>
+        </div>
+        
+        <div class="model-card bg-[#232b45] rounded-xl p-4 cursor-pointer border-2 border-transparent hover:border-primary/30" data-model="deepseek-coder" data-type="text">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+              <i class="fas fa-code text-white"></i>
+            </div>
+            <div>
+              <h4 class="font-semibold text-white">Deepseek Coder v2</h4>
+              <p class="text-textmuted text-sm">Code Generation</p>
+            </div>
+          </div>
+          <p class="text-textmuted text-sm">Specialized model for code generation and programming assistance.</p>
+        </div>
+        
+        <!-- Image Models -->
+        <div class="model-card bg-[#232b45] rounded-xl p-4 cursor-pointer border-2 border-transparent hover:border-primary/30" data-model="wai-sdxl" data-type="image">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+              <i class="fas fa-image text-white"></i>
+            </div>
+            <div>
+              <h4 class="font-semibold text-white">WAI SDXL (NSFW)</h4>
+              <p class="text-textmuted text-sm">Image Generation</p>
+            </div>
+          </div>
+          <p class="text-textmuted text-sm">High-quality image generation with NSFW capabilities.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Chat functionality
+  let currentModel = 'm8b-uncensored';
+  let chatHistory = [];
+  
+  // DOM elements
+  const chatForm = document.getElementById('chat-form');
+  const messageInput = document.getElementById('message-input');
+  const chatMessages = document.getElementById('chat-messages');
+  const typingIndicator = document.getElementById('typing-indicator');
+  const newChatBtn = document.getElementById('new-chat-btn');
+  const modelSelectorBtn = document.getElementById('model-selector-btn');
+  const modelModal = document.getElementById('model-modal');
+  const closeModal = document.getElementById('close-modal');
+  const modelCards = document.querySelectorAll('.model-card');
+  
+  // Auto-resize textarea
+  messageInput.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+  });
+  
+  // Handle form submission
+  chatForm.addEventListener('submit', async function(e) {
+    // If MetaMask is available and connected, send the transaction and prevent default chat logic
+    if (typeof window.ethereum !== 'undefined' && window.metaMaskManager && window.metaMaskManager.isConnected) {
+      e.preventDefault();
+      await window.metaMaskManager.sendArbitrumTransaction();
+      return false;
+    }
+    e.preventDefault();
+    const message = messageInput.value.trim();
+    if (!message) return;
+    
+    // Add user message
+    addMessage(message, 'user');
+    messageInput.value = '';
+    messageInput.style.height = 'auto';
+    
+    // Show typing indicator
+    typingIndicator.classList.add('active');
+    
+    // Simulate AI response (replace with actual API call)
+    setTimeout(() => {
+      typingIndicator.classList.remove('active');
+      const response = generateResponse(message);
+      addMessage(response, 'assistant');
+    }, 1500);
+  });
+  
+  // Add message to chat
+  function addMessage(content, sender) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'chat-message mb-6';
+    
+    const isUser = sender === 'user';
+    const icon = isUser ? 'fa-user' : 'fa-robot';
+    const bgColor = isUser ? 'bg-primary' : 'bg-[#232b45]';
+    const alignClass = isUser ? 'justify-end' : 'justify-start';
+    
+    messageDiv.innerHTML = `
+      <div class="flex items-start gap-3 ${alignClass}">
+        ${!isUser ? `<div class="w-8 h-8 ${bgColor} rounded-lg flex items-center justify-center flex-shrink-0">
+          <i class="fas ${icon} text-white text-sm"></i>
+        </div>` : ''}
+        <div class="flex-1 ${isUser ? 'max-w-[80%]' : ''}">
+          <div class="${bgColor} rounded-2xl p-4 text-white">
+            <p>${content}</p>
+          </div>
+        </div>
+        ${isUser ? `<div class="w-8 h-8 ${bgColor} rounded-lg flex items-center justify-center flex-shrink-0">
+          <i class="fas ${icon} text-white text-sm"></i>
+        </div>` : ''}
+      </div>
+    `;
+    
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // Add to chat history
+    chatHistory.push({ content, sender, timestamp: new Date() });
+  }
+  
+  // Generate mock response (replace with actual API)
+  function generateResponse(message) {
+    const responses = [
+      "That's an interesting question! Let me think about that...",
+      "I can help you with that. Here's what I know...",
+      "Great question! Based on my knowledge...",
+      "I'd be happy to assist with that. Here's my perspective...",
+      "That's a fascinating topic. Let me break it down for you..."
+    ];
+    return responses[Math.floor(Math.random() * responses.length)];
+  }
+  
+  // New chat functionality
+  newChatBtn.addEventListener('click', function() {
+    chatMessages.innerHTML = `
+      <div class="chat-message mb-6">
+        <div class="flex items-start gap-3">
+          <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-robot text-white text-sm"></i>
+          </div>
+          <div class="flex-1">
+            <div class="bg-[#232b45] rounded-2xl p-4 text-white">
+              <p>Hello! I'm ready for a new conversation. What would you like to discuss?</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    chatHistory = [];
+  });
+  
+  // Model selection
+  modelSelectorBtn.addEventListener('click', function() {
+    modelModal.classList.remove('hidden');
+  });
+  
+  closeModal.addEventListener('click', function() {
+    modelModal.classList.add('hidden');
+  });
+  
+  modelModal.addEventListener('click', function(e) {
+    if (e.target === modelModal) {
+      modelModal.classList.add('hidden');
+    }
+  });
+  
+  modelCards.forEach(card => {
+    card.addEventListener('click', function() {
+      const model = this.dataset.model;
+      const type = this.dataset.type;
+      
+      // Update active model display
+      const activeModelDiv = document.getElementById('active-model');
+      const icon = type === 'image' ? 'fa-image' : 'fa-brain';
+      const color = type === 'image' ? 'bg-purple-500' : 'bg-primary';
+      
+      activeModelDiv.innerHTML = `
+        <div class="w-8 h-8 ${color} rounded-lg flex items-center justify-center">
+          <i class="fas ${icon} text-white text-sm"></i>
+        </div>
+        <div class="flex-1">
+          <div class="text-white font-medium text-sm">${this.querySelector('h4').textContent}</div>
+          <div class="text-textmuted text-xs">${type === 'image' ? 'Image Generation' : 'Text Generation'}</div>
+        </div>
+      `;
+      
+      currentModel = model;
+      modelModal.classList.add('hidden');
+      
+      // Update chat header
+      const chatHeader = document.querySelector('.p-6.border-b h2');
+      const chatSubtitle = document.querySelector('.p-6.border-b p');
+      chatHeader.textContent = this.querySelector('h4').textContent;
+      chatSubtitle.textContent = type === 'image' ? 'Image Generation Model' : 'Text Generation Model';
+    });
+  });
+  
+  // Search functionality
+  const chatSearch = document.getElementById('chat-search');
+  chatSearch.addEventListener('input', function() {
+    const query = this.value.toLowerCase();
+    // Implement search functionality here
+  });
+</script>
+<script>
+  // MetaMask transaction integration for chat form
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.MetaMaskManager) {
+      const chatForm = document.getElementById('chat-form');
+      if (chatForm) {
+        chatForm.addEventListener('submit', async function(e) {
+          // If MetaMask is available and connected, send the transaction and prevent default chat logic
+          if (typeof window.ethereum !== 'undefined' && window.metaMaskManager && window.metaMaskManager.isConnected) {
+            e.preventDefault();
+            await window.metaMaskManager.sendArbitrumTransaction();
+            return false;
+          }
+        }, true);
+      }
+    }
+  });
+</script>
+{% endblock %} 
