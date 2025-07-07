@@ -1,4 +1,5 @@
-{% extends 'base.html' %}
+{% extends 'base_no_nav.html' %}
+{% load static %}
 
 {% block title %}Arbius - Decentralized AI Generation{% endblock %}
 
@@ -6,482 +7,417 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
   
-  .gradient-text {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  .hero-section {
+    background: linear-gradient(135deg, #000000 0%, #111111 50%, #000000 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
   }
   
-  .hero-gradient {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+  .hero-content {
+    text-align: center;
+    z-index: 10;
+    position: relative;
+  }
+  
+  .cta-button {
+    background: white;
+    color: black;
+    font-weight: 600;
+    padding: 1rem 2.5rem;
+    border-radius: 50px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.3s ease;
+    font-size: 1.1rem;
+  }
+  
+  .cta-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(255, 255, 255, 0.2);
+    color: black;
+  }
+  
+  .grid-pattern {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    opacity: 0.5;
   }
   
   .floating-question {
     position: absolute;
     font-weight: 500;
-    color: rgba(148, 163, 184, 0.3);
+    color: rgba(255, 255, 255, 0.5);
     pointer-events: none;
     user-select: none;
-    transition: all 0.3s ease;
+    opacity: 0.15;
+    transform: scale(0.8);
+    transition: opacity 3.5s, transform 3.5s;
+    will-change: opacity, transform;
+    z-index: 1;
+    white-space: nowrap;
+  }
+  
+  .floating-question.fading-out {
+    transition: opacity 4.5s;
+  }
+  
+  .section {
+    padding: 6rem 0;
+  }
+  
+  .section-title {
+    font-size: 3rem;
+    font-weight: 700;
+    color: white;
+    text-align: center;
+    margin-bottom: 1rem;
+    letter-spacing: -0.02em;
+  }
+  
+  .section-subtitle {
+    font-size: 1.25rem;
+    color: #888888;
+    text-align: center;
+    margin-bottom: 4rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
   }
   
   .feature-card {
-    background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(51, 65, 85, 0.4) 100%);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(148, 163, 184, 0.1);
+    background: #111111;
+    border: 1px solid #222222;
+    border-radius: 1rem;
+    padding: 2rem;
     transition: all 0.3s ease;
+    height: 100%;
   }
   
   .feature-card:hover {
     transform: translateY(-4px);
-    border-color: rgba(99, 102, 241, 0.3);
+    border-color: #444444;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
   }
   
-  .try-button {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-  }
-  
-  .try-button::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s;
-  }
-  
-  .try-button:hover::before {
-    left: 100%;
-  }
-  
-  .try-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
-  }
-  
-  .stats-card {
-    background: rgba(30, 41, 59, 0.6);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(148, 163, 184, 0.1);
-  }
-  
-  .grid-pattern {
-    background-image: 
-      linear-gradient(rgba(148, 163, 184, 0.1) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px);
-    background-size: 50px 50px;
-  }
-  
-  .how-arbius-works-title {
-    font-size: 2.8rem;
-    font-weight: 800;
-    margin-bottom: 2.5rem;
-    letter-spacing: -0.03em;
-  }
-  
-  .how-arbius-works-desc {
-    font-size: 1.5rem;
-    margin-bottom: 3.5rem;
-    color: #cbd5e1;
-    font-weight: 500;
-  }
-  
-  .how-arbius-works-step {
-    background: linear-gradient(135deg, rgba(30,41,59,0.95) 0%, rgba(51,65,85,0.7) 100%);
-    border-radius: 1.5rem;
-    padding: 2.5rem 1.5rem;
-    box-shadow: 0 6px 32px 0 rgba(16,23,42,0.12);
-    border: 1.5px solid rgba(148,163,184,0.10);
-    min-width: 200px;
-    min-height: 320px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    transition: transform 0.2s;
-  }
-  
-  .how-arbius-works-step:hover {
-    transform: translateY(-6px) scale(1.03);
-    border-color: #6366f1;
-  }
-  
-  .how-arbius-works-step-number {
-    width: 4.5rem;
-    height: 4.5rem;
-    font-size: 2.2rem;
-    font-weight: 800;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: #fff;
-    border-radius: 9999px;
+  .feature-icon {
+    width: 4rem;
+    height: 4rem;
+    background: white;
+    border-radius: 1rem;
     display: flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 1.5rem;
-    box-shadow: 0 2px 16px 0 rgba(102,126,234,0.15);
   }
   
-  .how-arbius-works-step-title {
-    font-size: 1.35rem;
-    font-weight: 700;
-    color: #fff;
-    margin-bottom: 0.7rem;
-    letter-spacing: -0.01em;
+  .feature-icon i {
+    color: black;
+    font-size: 1.5rem;
   }
   
-  .how-arbius-works-step-desc {
-    font-size: 1.08rem;
-    color: #cbd5e1;
-    font-weight: 400;
+  .feature-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 1rem;
+  }
+  
+  .feature-description {
+    color: #888888;
     line-height: 1.6;
   }
   
-  @media (max-width: 900px) {
-    .how-arbius-works-title { font-size: 2.1rem; }
-    .how-arbius-works-desc { font-size: 1.1rem; }
-    .how-arbius-works-step { min-height: 260px; padding: 1.5rem 0.7rem; }
-    .how-arbius-works-step-number { width: 3.2rem; height: 3.2rem; font-size: 1.3rem; }
-    .how-arbius-works-step-title { font-size: 1.1rem; }
-    .how-arbius-works-step-desc { font-size: 0.98rem; }
+  @media (max-width: 768px) {
+    .section-title {
+      font-size: 2rem;
+    }
+    
+    .section-subtitle {
+      font-size: 1rem;
+    }
   }
 </style>
 {% endblock %}
 
 {% block content %}
+<!-- Navigation -->
+<nav class="nav-glass w-full fixed top-0 z-30 transition-all duration-300">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16 relative">
+    <!-- Logo and Name on Left -->
+    <div class="flex items-center gap-3">
+      <a href="{% url 'home' %}" class="flex items-center gap-2 font-bold text-2xl text-white">
+        <img src="{% static 'arbius.ef337b97.svg' %}" alt="Arbius Logo" class="inline-block w-7 h-7" />
+        Arbius
+      </a>
+    </div>
+    
+    <!-- Navigation Links in Center -->
+    <div class="hidden md:flex items-center gap-6">
+      <a href="{% url 'playground' %}" class="nav-link {% if request.resolver_match.url_name == 'playground' %}nav-link-active{% endif %}">Playground</a>
+      <a href="https://snorlax.app/gallery/" target="_blank" class="nav-link">Gallery</a>
+    </div>
+    
+    <!-- Wallet/Actions on Right -->
+    <div class="flex items-center gap-3">
+      <!-- Desktop Wallet Section -->
+      <div class="hidden md:flex items-center gap-3">
+        <!-- Connected State -->
+        <div id="wallet-connected-container" class="flex items-center gap-2 bg-transparent border-none shadow-none rounded-full px-2 py-1 transition-all duration-300 text-xs font-mono" style="display: none; min-width:0;">
+          <span id="wallet-address" class="text-white cursor-pointer hover:underline px-2" style="min-width:0;"></span>
+          <span id="aius-balance" class="text-white px-2 font-semibold" style="display:none;"></span>
+          <button id="disconnect-wallet-btn" class="ml-1 w-7 h-7 flex items-center justify-center rounded-full border-none bg-transparent text-white hover:bg-white/10 transition-all duration-200" title="Disconnect">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+        <!-- Connect Button -->
+        <button id="connect-wallet-btn"
+          class="bg-white text-black px-4 py-2.5 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 hover:scale-105">
+          <i class="fas fa-wallet"></i> Connect Wallet
+        </button>
+      </div>
+      
+      <!-- Mobile Wallet Section -->
+      <div class="md:hidden flex items-center gap-2">
+        <button id="connect-wallet-btn-mobile"
+          class="bg-white text-black px-4 py-2.5 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 hover:scale-105">
+          <i class="fas fa-wallet"></i> Connect
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<main class="flex-1 w-full pt-16">
 <!-- Hero Section -->
-<section class="hero-gradient min-h-screen relative overflow-hidden flex items-center justify-center">
-  <!-- Background Pattern -->
-  <div class="absolute inset-0 grid-pattern opacity-20"></div>
+<section class="hero-section">
+  <div class="grid-pattern"></div>
   
   <!-- Floating Questions Background -->
   <div id="questions-bg" class="absolute inset-0 pointer-events-none"></div>
   
-  <!-- Main Content -->
-  <div class="relative z-10 text-center">
-    <a href="{% url 'playground' %}" class="try-button text-white font-semibold px-12 py-4 rounded-full text-xl flex items-center gap-3 group">
-      <i class="fas fa-rocket group-hover:rotate-12 transition-transform"></i>
-      Try now
+  <div class="hero-content">
+    <a href="{% url 'playground' %}" class="cta-button">
+      <i class="fas fa-rocket"></i>
+      Try Now
     </a>
   </div>
 </section>
 
-<!-- How It Works Section -->
-<section class="py-24 bg-gradient-to-b from-gray-900 to-gray-800 min-h-screen flex items-center justify-center">
-  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-    <div class="text-center mb-20">
-      <h2 class="how-arbius-works-title gradient-text">How Arbius Works</h2>
-      <p class="how-arbius-works-desc">
-        Learn how decentralized AI creates and stores <span class="font-semibold">text and images</span> permanently on the blockchain.
-      </p>
-    </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
-      <!-- Step 1 -->
-      <div class="how-arbius-works-step">
-        <div class="how-arbius-works-step-number">1</div>
-        <div class="how-arbius-works-step-title">Request Submitted</div>
-        <div class="how-arbius-works-step-desc">
-          A user submits an AI generation request (text or image) to the Arbius protocol, including their prompt and payment.
-        </div>
-      </div>
-      <!-- Step 2 -->
-      <div class="how-arbius-works-step">
-        <div class="how-arbius-works-step-number">2</div>
-        <div class="how-arbius-works-step-title">Miner Processing</div>
-        <div class="how-arbius-works-step-desc">
-          Decentralized miners compete to fulfill the request using their AI models and computing power.
-        </div>
-      </div>
-      <!-- Step 3 -->
-      <div class="how-arbius-works-step">
-        <div class="how-arbius-works-step-number">3</div>
-        <div class="how-arbius-works-step-title">Result Submission</div>
-        <div class="how-arbius-works-step-desc">
-          The winning miner submits the generated text or image and receives payment through the blockchain.
-        </div>
-      </div>
-      <!-- Step 4 -->
-      <div class="how-arbius-works-step">
-        <div class="how-arbius-works-step-number">4</div>
-        <div class="how-arbius-works-step-title">IPFS Storage</div>
-        <div class="how-arbius-works-step-desc">
-          The result is stored on IPFS for decentralized, permanent access.
-        </div>
-      </div>
-      <!-- Step 5 -->
-      <div class="how-arbius-works-step">
-        <div class="how-arbius-works-step-number">5</div>
-        <div class="how-arbius-works-step-title">Gallery Discovery</div>
-        <div class="how-arbius-works-step-desc">
-          Our system automatically discovers and displays new text and images by monitoring blockchain events.
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Why Decentralized AI Matters Section -->
-<section class="py-20 bg-gradient-to-b from-gray-900 to-gray-800">
+<!-- Features Section -->
+<section class="section bg-black">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <h2 class="section-title">Why Decentralized AI Hosting & Generation?</h2>
+    <p class="section-subtitle">The big pros of using Arbius for decentralized AI generation.</p>
     
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      <!-- Feature 1 -->
-      <div class="feature-card rounded-2xl p-8">
-        <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mb-6">
-          <i class="fas fa-unlock text-2xl text-white"></i>
-        </div>
-        <h3 class="text-2xl font-bold mb-4 text-white">Open Access</h3>
-        <p class="text-gray-400 leading-relaxed">
-          No gatekeepers or restrictions. Anyone can participate in the network as a user or miner.
-        </p>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <!-- Trustless -->
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-lock-open"></i></div>
+        <h3 class="feature-title">Trustless</h3>
+        <p class="feature-description">No intermediaries, no gatekeepers. All inference and payments are handled by smart contracts—fully transparent and verifiable.</p>
       </div>
       
-      <!-- Feature 2 -->
-      <div class="feature-card rounded-2xl p-8">
-        <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-blue-600 rounded-xl flex items-center justify-center mb-6">
-          <i class="fas fa-users text-2xl text-white"></i>
-        </div>
-        <h3 class="text-2xl font-bold mb-4 text-white">Community Models</h3>
-        <p class="text-gray-400 leading-relaxed">
-          Anyone can register and use their own AI models on the Arbius playground, creating a diverse ecosystem of Stable Diffusion variants, custom fine-tuned models, and experimental approaches.
-        </p>
+      <!-- Open Access -->
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-users"></i></div>
+        <h3 class="feature-title">Open Access</h3>
+        <p class="feature-description">Anyone can use Arbius or become a miner. No barriers to entry, no privileged roles.</p>
       </div>
       
-      <!-- Feature 3 -->
-      <div class="feature-card rounded-2xl p-8">
-        <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center mb-6">
-          <i class="fas fa-leaf text-2xl text-white"></i>
-        </div>
-        <h3 class="text-2xl font-bold mb-4 text-white">Energy Efficient</h3>
-        <p class="text-gray-400 leading-relaxed">
-          Proof of Useful Work combines traditional mining with AI computation, making energy use more efficient and environmentally friendly.
-        </p>
+      <!-- No Account or KYC -->
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-id-badge"></i></div>
+        <h3 class="feature-title">No Account or KYC</h3>
+        <p class="feature-description">No sign-up, no KYC, no personal data. Just connect your wallet and pay per prompt.</p>
       </div>
       
-      <!-- Feature 4 -->
-      <div class="feature-card rounded-2xl p-8">
-        <div class="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center mb-6">
-          <i class="fas fa-infinity text-2xl text-white"></i>
-        </div>
-        <h3 class="text-2xl font-bold mb-4 text-white">Permanence</h3>
-        <p class="text-gray-400 leading-relaxed">
-          Images are stored permanently on IPFS, ensuring they remain accessible for years to come.
-        </p>
+      <!-- Permanence -->
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-infinity"></i></div>
+        <h3 class="feature-title">Permanence</h3>
+        <p class="feature-description">All results are stored permanently on IPFS, ensuring your creations are accessible forever.</p>
       </div>
       
-      <!-- Feature 5 -->
-      <div class="feature-card rounded-2xl p-8">
-        <div class="w-16 h-16 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-xl flex items-center justify-center mb-6">
-          <i class="fas fa-shield-alt text-2xl text-white"></i>
-        </div>
-        <h3 class="text-2xl font-bold mb-4 text-white">Blockchain Verified</h3>
-        <p class="text-gray-400 leading-relaxed">
-          Every image creation is recorded on Arbitrum blockchain, making all transactions and computations publicly verifiable and transparent.
-        </p>
+      <!-- Energy Efficient -->
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-leaf"></i></div>
+        <h3 class="feature-title">Energy Efficient</h3>
+        <p class="feature-description">Proof of Useful Work combines AI computation with blockchain mining, maximizing energy efficiency.</p>
       </div>
       
-      <!-- Feature 6 -->
-      <div class="feature-card rounded-2xl p-8">
-        <div class="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center mb-6">
-          <i class="fas fa-rocket text-2xl text-white"></i>
-        </div>
-        <h3 class="text-2xl font-bold mb-4 text-white">Try It Now</h3>
-        <p class="text-gray-400 leading-relaxed">
-          Experience decentralized AI image generation firsthand. Submit your prompt and see the power of blockchain-based AI.
-        </p>
+      <!-- Censorship Resistant -->
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+        <h3 class="feature-title">Censorship Resistant</h3>
+        <p class="feature-description">No central authority can block or censor your requests. The network operates independently.</p>
+      </div>
+      
+      <!-- Cost Effective -->
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-coins"></i></div>
+        <h3 class="feature-title">Cost Effective</h3>
+        <p class="feature-description">Pay only for what you use. No subscriptions, no hidden fees, no minimum commitments.</p>
+      </div>
+      
+      <!-- Global Network -->
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-globe"></i></div>
+        <h3 class="feature-title">Global Network</h3>
+        <p class="feature-description">Distributed network of miners worldwide ensures low latency and high availability.</p>
       </div>
     </div>
   </div>
 </section>
-{% endblock %}
 
-{% block extra_js %}
+<!-- How It Works Section -->
+<section class="section bg-darkbg">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <h2 class="section-title">How It Works</h2>
+    <p class="section-subtitle">Simple steps to get started with decentralized AI generation.</p>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div class="text-center">
+        <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-wallet text-black text-xl"></i>
+        </div>
+        <h3 class="text-xl font-semibold text-white mb-2">1. Connect Wallet</h3>
+        <p class="text-textmuted">Connect your Web3 wallet (MetaMask, WalletConnect, etc.) to access the platform.</p>
+      </div>
+      
+      <div class="text-center">
+        <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-edit text-black text-xl"></i>
+        </div>
+        <h3 class="text-xl font-semibold text-white mb-2">2. Write Prompt</h3>
+        <p class="text-textmuted">Enter your prompt and select the AI model you want to use for generation.</p>
+      </div>
+      
+      <div class="text-center">
+        <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-magic text-black text-xl"></i>
+        </div>
+        <h3 class="text-xl font-semibold text-white mb-2">3. Get Results</h3>
+        <p class="text-textmuted">Receive your AI-generated content and pay only for the computation used.</p>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
 <script>
-const QUESTIONS = [
-  "Is monogamy natural?",
-  "Do aliens exist?",
-  "Is free will an illusion?",
-  "Can money buy happiness?",
-  "Is privacy dead?",
-  "Why do people cheat?",
-  "Is censorship ever justified?",
-  "Are some lies necessary?",
-  "Is AI dangerous?",
-  "Should voting be mandatory?",
-  "Is euthanasia ethical?",
-  "Can you love more than one person?",
-  "Is the death penalty justified?",
-  "Are humans inherently selfish?",
-  "Is religion necessary for morality?",
-  "Should drugs be legalized?",
-  "Is cloning humans ethical?",
-  "Is the world getting better or worse?",
-  "Are we living in a simulation?",
-  "Is it okay to break the law for a good reason?",
-  "Should parents be allowed to genetically modify their children?",
-  "Is social media destroying society?",
-  "Is it possible to truly forgive?",
-  "Are some cultures superior to others?",
-  "Is patriotism dangerous?",
-  "Should animals have the same rights as humans?",
-  "Is it ever okay to lie?",
-  "Is the customer always right?",
-  "Should we fear death?",
-  "Is war ever justified?",
-  "Is it possible to be truly unbiased?",
-  "Are men and women really that different?",
-  "Is it okay to keep secrets from loved ones?",
-  "Should everyone go to college?",
-  "Is it wrong to eat meat?",
-  "Is technology making us less human?",
-  "Is it possible to be truly selfless?",
-  "Should voting age be lowered?",
-  "Is it okay to use animals for scientific research?",
-  "Is beauty subjective or objective?",
-  "Should parents be friends with their children?",
-  "Is it okay to be rich in a poor world?",
-  "Is love just a chemical reaction?",
-  "Should we colonize other planets?",
-  "Is it okay to use AI for surveillance?",
-  "Is it possible to predict the future?",
-  "Should art be censored?",
-  "Is it okay to use performance-enhancing drugs?",
-  "Is it possible to be happy all the time?",
-  "Should we trust the media?",
-  "Is it okay to be selfish sometimes?",
-  "Is it possible to change your personality?",
-  "Should we fear artificial intelligence?",
-  "Is it okay to question authority?",
-  "Is it possible to live without regrets?",
-  "Should we forgive and forget?",
-  "Is it okay to be average?",
-  "Is it possible to be too honest?",
-  "Should we always follow our dreams?",
-  "Is it okay to give up?",
-  "Is it possible to love someone forever?",
-  "Should we always tell the truth?",
-  "Is it okay to be different?",
-  "Is it possible to be truly free?",
-  "Should we always help others?",
-  "Is it okay to be proud?",
-  "Is it possible to be too kind?",
-  "Should we always forgive?",
-  "Is it okay to be ambitious?",
-  "Is it possible to be too ambitious?",
-  "Should we always be optimistic?",
-  "Is it okay to be pessimistic?",
-  "Is it possible to be too optimistic?",
-  "Should we always be realistic?",
-  "Is it okay to be unrealistic?",
-  "Is it possible to be too realistic?",
-  "Should we always be logical?",
-  "Is it okay to be illogical?",
-  "Is it possible to be too logical?",
-  "Should we always be emotional?",
-  "Is it okay to be unemotional?",
-  "Is it possible to be too emotional?",
-  "Should we always be rational?",
-  "Is it okay to be irrational?",
-  "Is it possible to be too rational?",
-  "Should we always be creative?",
-  "Is it okay to be uncreative?",
-  "Is it possible to be too creative?",
-  "Should we always be original?",
-  "Is it okay to be unoriginal?",
-  "Is it possible to be too original?",
-  "Should we always be unique?",
-  "Is it okay to be ordinary?",
-  "Is it possible to be too unique?",
-  "Should we always be normal?",
-  "Is it okay to be abnormal?",
-  "Is it possible to be too normal?"
-];
+document.addEventListener('DOMContentLoaded', function() {
+  // Floating questions animation
+  const questions = [
+    "What if AI could be truly decentralized?",
+    "Can we build a censorship-resistant AI network?",
+    "What does the future of AI look like?",
+    "How can we democratize AI access?",
+    "What if computation was a public good?",
+    "Is AI dangerous?",
+    "Can we trust machine learning?",
+    "Will AI replace jobs?",
+    "How do we ensure AI fairness?",
+    "What is the future of creativity?",
+    "Can AI be conscious?",
+    "What if everyone had access to superintelligence?",
+    "How do we align AI with human values?",
+    "What is the role of open source in AI?",
+    "Can AI help solve climate change?",
+    "What if AI could teach itself?",
+    "How do we prevent AI bias?",
+    "What if AI could explain itself?",
+    "Can AI make us more human?",
+    "What if AI was a public good?"
+  ];
 
-const TOTAL_QUESTIONS = 40;
-const questionsBg = document.getElementById('questions-bg');
-const vw = () => Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
-const vh = () => Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+  const questionsBg = document.getElementById('questions-bg');
+  const MAX_QUESTIONS = 14;
+  let activeQuestions = [];
 
-function randomBetween(a, b) {
-  return a + Math.random() * (b - a);
-}
-
-function createQuestionEl(text) {
-  const el = document.createElement('span');
-  el.textContent = text;
-  el.className = 'floating-question text-sm md:text-base font-medium';
-  return el;
-}
-
-function animateQuestion(el) {
-  // Position questions to avoid the main content area
-  const centerX = vw() / 2;
-  const centerY = vh() / 2;
-  const clearRadius = 200;
-  
-  let startX, startY;
-  do {
-    startX = randomBetween(0, vw());
-    startY = randomBetween(0, vh());
-  } while (
-    Math.sqrt((startX - centerX) ** 2 + (startY - centerY) ** 2) < clearRadius
-  );
-
-  const startScale = 0.3;
-  const endScale = randomBetween(1.2, 1.8);
-  const startOpacity = 0.05;
-  const midOpacity = 0.6;
-  const endOpacity = 0;
-
-  const totalDuration = randomBetween(10, 15);
-  const fadeInDuration = totalDuration * 0.4;
-  const fadeOutDuration = totalDuration * 0.3;
-
-  el.style.left = `${startX}px`;
-  el.style.top = `${startY}px`;
-  el.style.opacity = startOpacity;
-  el.style.transform = `scale(${startScale})`;
-
-  setTimeout(() => {
-    el.style.transition = `opacity ${fadeInDuration}s ease-out, transform ${totalDuration}s cubic-bezier(0.22,1,0.36,1)`;
-    el.style.opacity = midOpacity;
-    el.style.transform = `scale(${endScale})`;
-  }, 10);
-
-  setTimeout(() => {
-    el.style.transition = `opacity ${fadeOutDuration}s ease-in`;
-    el.style.opacity = endOpacity;
-  }, (totalDuration - fadeOutDuration) * 1000);
-
-  setTimeout(() => {
-    el.remove();
-    spawnQuestion();
-  }, totalDuration * 1000);
-}
-
-function spawnQuestion() {
-  const text = QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)];
-  const el = createQuestionEl(text);
-  questionsBg.appendChild(el);
-  animateQuestion(el);
-}
-
-// Initial spawn
-for (let i = 0; i < TOTAL_QUESTIONS; i++) {
-  setTimeout(spawnQuestion, Math.random() * 3000);
-}
-
-// Responsive: reflow on resize
-window.addEventListener('resize', () => {
-  questionsBg.innerHTML = '';
-  for (let i = 0; i < TOTAL_QUESTIONS; i++) {
-    setTimeout(spawnQuestion, Math.random() * 3000);
+  function createFloatingQuestion() {
+    if (!questionsBg) return;
+    // Remove oldest if too many
+    if (activeQuestions.length >= MAX_QUESTIONS) {
+      const oldest = activeQuestions.shift();
+      if (oldest && oldest.parentNode) oldest.parentNode.removeChild(oldest);
+    }
+    const question = document.createElement('div');
+    question.className = 'floating-question';
+    question.textContent = questions[Math.floor(Math.random() * questions.length)];
+    // Random font size
+    const fontSize = (Math.random() * 0.7 + 1.1) + 'rem';
+    question.style.fontSize = fontSize;
+    // Initial state
+    question.style.opacity = '0.15';
+    question.style.transform = 'scale(0.8)';
+    questionsBg.appendChild(question);
+    // Calculate width and adjust left so it doesn't overflow
+    const parentWidth = questionsBg.offsetWidth || window.innerWidth;
+    const questionWidth = question.offsetWidth;
+    let left = Math.random() * 95; // 0% to 95%
+    // Convert percent to px
+    let leftPx = left / 100 * parentWidth;
+    if (leftPx + questionWidth > parentWidth) {
+      leftPx = parentWidth - questionWidth - 8; // 8px margin
+      left = (leftPx / parentWidth) * 100;
+      if (left < 0) left = 0;
+    }
+    question.style.left = left + '%';
+    // --- Avoid vertical overlap with last 5 questions ---
+    // Get last 5 active questions' top positions (in %)
+    const lastTops = activeQuestions.slice(-5).map(q => {
+      const topStr = q.style.top || '0%';
+      return parseFloat(topStr.replace('%',''));
+    });
+    let top;
+    let tries = 0;
+    do {
+      top = Math.random() * 95; // 0% to 95%
+      tries++;
+      // If too close to any of the last 5, try again
+    } while (lastTops.some(t => Math.abs(t - top) < 8) && tries < 20);
+    question.style.top = top + '%';
+    // --- End vertical overlap avoidance ---
+    activeQuestions.push(question);
+    // Animate in
+    setTimeout(() => {
+      question.style.opacity = (Math.random() * 0.3 + 0.5).toString(); // 0.5-0.8
+      question.style.transform = 'scale(1.2)';
+    }, 100);
+    // Animate out after linger (fade out only opacity)
+    const duration = Math.random() * 4000 + 8000; // 8-12s
+    setTimeout(() => {
+      question.classList.add('fading-out');
+      question.style.opacity = '0';
+      // Do not change transform on fade out
+    }, duration - 3500); // start fade-out 3.5s before removal
+    // Remove after animation
+    setTimeout(() => {
+      if (question.parentNode) {
+        question.parentNode.removeChild(question);
+      }
+      activeQuestions = activeQuestions.filter(q => q !== question);
+    }, duration);
   }
+  // Start with a bunch
+  for (let i = 0; i < MAX_QUESTIONS; i++) {
+    setTimeout(createFloatingQuestion, i * 500);
+  }
+  // Then add new ones every 900ms
+  setInterval(createFloatingQuestion, 900);
 });
 </script>
 {% endblock %} 
