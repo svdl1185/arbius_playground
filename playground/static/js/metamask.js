@@ -685,7 +685,7 @@ class MetaMaskManager {
         'deepseek': { short: 'Deepseek', label: 'Deepseek-coder-v2' }
     };
     function getSavedModel() {
-        return localStorage.getItem('selectedModel') || 'm8b-uncensored';
+        return localStorage.getItem('selectedModel') || null;
     }
     function setSavedModel(model) {
         localStorage.setItem('selectedModel', model);

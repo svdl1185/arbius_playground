@@ -355,7 +355,7 @@ document.addEventListener('DOMContentLoaded', function() {
     question.style.left = left + '%';
     // --- Avoid vertical overlap with last 5 questions ---
     // Get last 5 active questions' top positions (in %)
-    const lastTops = activeQuestions.slice(-18).map(q => {
+    const lastTops = activeQuestions.slice(-20).map(q => {
       const topStr = q.style.top || '0%';
       return parseFloat(topStr.replace('%',''));
     });

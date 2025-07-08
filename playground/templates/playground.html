@@ -16,7 +16,7 @@
   .navbar-wallet { display: flex; align-items: center; gap: 10px; }
   .wallet-btn-outline { background: rgba(0,0,0,0.55) !important; color: white !important; border: 1.5px solid white !important; box-shadow: none !important; transition: background 0.2s, color 0.2s, border 0.2s; backdrop-filter: blur(2px); padding: 8px 18px; border-radius: 12px; font-weight: 600; font-size: 1.05rem; }
   .wallet-btn-outline:hover { background: rgba(0,0,0,0.75) !important; color: #fff !important; }
-  .playground-root { display: flex; height: calc(100vh - 64px); min-height: 0; background: #0a0a0a; /* overflow: visible; */ }
+  .playground-root { display: flex; height: calc(100vh - 64px); min-height: 0; background: #0a0a0a; /* overflow: visible; */ width: 100%; }
   .sidebar { width: 260px; background: #181818; border-right: 1px solid #222; display: flex; flex-direction: column; transition: width 0.3s; min-width: 56px; position: relative; overflow: visible; }
   .sidebar.collapsed {
     width: 18px !important;
@@ -74,25 +74,132 @@
   .sidebar.collapsed .history-item { justify-content: center; padding-left: 0; padding-right: 0; }
   .sidebar.collapsed .history-item span { display: none; }
   .sidebar.collapsed .history-item i { margin: 0; }
-  .main-area { flex: 1; display: flex; flex-direction: column; height: 100%; min-width: 0; background: #0a0a0a; }
+  .main-area { flex: 1; display: flex; flex-direction: column; height: 100%; min-width: 0; background: #0a0a0a; width: 100%; }
   .main-header { display: flex; align-items: center; justify-content: space-between; padding: 28px 36px 12px 36px; border-bottom: 1px solid #222; }
   .main-header .model-indicator { font-size: 0.95rem; color: #aaa; margin-top: 2px; }
-  .chat-area { flex: 1; overflow-y: auto; padding: 28px 0 0 0; display: flex; flex-direction: column; align-items: stretch; min-height: 0; }
-  .chat-message-row { display: flex; align-items: flex-end; gap: 12px; margin: 0 0 18px 0; padding: 0 36px; position: relative; }
-  .chat-message-row.user { flex-direction: row-reverse; justify-content: flex-end; }
-  .chat-message-row.assistant { flex-direction: row; justify-content: flex-start; }
-  .chat-message-avatar { width: 32px; height: 32px; border-radius: 50%; background: #fff; color: #181818; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1rem; }
-  .chat-message-content { background: #232a3a; color: #fff; border-radius: 14px; padding: 10px 16px; font-size: 1.02rem; max-width: 520px; word-break: break-word; }
-  .chat-message-row.user .chat-message-avatar { background: #fff; color: #181818; }
-  .chat-message-row.assistant .chat-message-avatar { background: #3b82f6; color: #fff; }
-  .chat-message-row.user .chat-message-content { background: #232323; color: #fff; }
-  .chat-message-row.assistant .chat-message-content { background: #232a3a; color: #fff; }
+  .chat-area {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 28px 0 0 0;
+    background: #0a0a0a;
+    position: relative;
+  }
+  .chat-messages-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .sidebar-collapsed .chat-messages-inner,
+  .sidebar-collapsed .chat-input-inner {
+    max-width: 1400px;
+  }
+  .chat-message-row {
+    display: flex;
+    align-items: flex-end;
+    width: 100%;
+    margin-bottom: 18px;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .chat-message-row.user {
+    justify-content: flex-end;
+  }
+  .chat-message-row.assistant {
+    justify-content: flex-start;
+    flex-direction: row;
+  }
+  .chat-message-row.assistant .chat-message-avatar {
+    margin-left: 0;
+    margin-right: 8px;
+    order: 0;
+  }
+  .chat-message-row.assistant .chat-message-content {
+    margin-left: 0;
+    margin-right: 0;
+    order: 1;
+  }
+  .chat-message-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #181818;
+    border: 2px solid #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1rem;
+    margin: 0 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    padding: 0;
+  }
+  .chat-message-row.user .chat-message-avatar {
+    display: none;
+  }
+  .chat-message-row.assistant .chat-message-avatar {
+    background: #3b82f6;
+    color: #fff;
+    order: 1;
+  }
+  .chat-message-content {
+    font-size: 0.82rem;
+    line-height: 1.35;
+    word-break: break-word;
+    display: inline-block;
+  }
+  .chat-message-row.user .chat-message-content {
+    background: #232323;
+    color: #fff;
+    border-radius: 14px;
+    padding: 10px 16px;
+    margin-right: 8px;
+    margin-left: 0;
+    max-width: 90vw;
+  }
+  .chat-message-row.assistant .chat-message-content {
+    background: none;
+    color: #fff;
+    border-radius: 0;
+    padding: 0;
+    margin-left: 8px;
+    margin-right: 0;
+    max-width: 90vw;
+  }
   .chat-message-actions { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
   .chat-message-actions button { background: none; border: none; color: #aaa; cursor: pointer; font-size: 1.1rem; padding: 2px 6px; border-radius: 6px; transition: background 0.2s, color 0.2s; }
   .chat-message-actions button:hover { background: #232323; color: #fff; }
   .chat-input-bar { width: 100%; padding: 0 0 18px 0; background: none; border: none; display: flex; align-items: center; justify-content: center; }
-  .chat-input-inner { display: flex; align-items: center; width: 100%; max-width: 600px; background: #181818; border-radius: 999px; border: 1.5px solid #fff; padding: 8px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.10); }
-  .chat-input-inner textarea { flex: 1; background: transparent; border: none; color: #fff; font-size: 1.05rem; padding: 8px 0; resize: none; outline: none; min-height: 32px; max-height: 100px; }
+  .chat-input-inner {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    background: #181818;
+    border-radius: 999px;
+    border: 1.5px solid #fff;
+    padding: 8px 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  }
+  /* Wider input when sidebar is collapsed */
+  .sidebar.collapsed ~ .main-area .chat-input-inner {
+    max-width: 1400px;
+  }
+  .chat-input-inner textarea {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 0.82rem;
+    line-height: 1.35;
+    padding: 5px 0;
+    resize: none;
+    outline: none;
+    min-height: 32px;
+    max-height: 100px;
+  }
   .chat-input-inner button { background: #fff; color: #181818; border: none; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; margin-left: 8px; cursor: pointer; transition: background 0.2s, color 0.2s; }
   .chat-input-inner button:hover { background: #e5e5e5; color: #181818; }
   .model-select-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10,10,10,0.98); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
@@ -113,6 +220,80 @@
   padding-left: 6px !important;
   padding-right: 6px !important;
 }
+.chat-main-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  position: relative;
+  min-height: 100vh;
+  padding-bottom: 0; /* remove extra space for fixed input bar */
+}
+.sidebar-collapsed .chat-main-inner {
+  max-width: 1200px;
+}
+.chat-messages-inner {
+  width: 100%;
+  /* Remove max-width here */
+}
+.chat-input-bar {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 0 0 18px 0;
+  margin-left: 0;
+  transition: none;
+}
+.sidebar.collapsed ~ .main-area .chat-input-bar,
+.sidebar-collapsed .chat-input-bar {
+  margin-left: 18px;
+}
+.chat-input-inner {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background: #181818;
+  border-radius: 999px;
+  border: 1.5px solid #fff;
+  padding: 8px 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  max-width: 900px;
+  margin: 0 auto;
+}
+.sidebar-collapsed .chat-input-inner {
+  max-width: 1200px;
+}
+/* Center model selection UI */
+#model-select-center {
+  max-width: 1100px;
+  margin: 0 auto;
+  left: 0;
+  right: 0;
+}
+.sidebar-collapsed #model-select-center {
+  max-width: 1400px;
+}
+  .history-item {
+    font-size: 0.85rem;
+    line-height: 1.3;
+    padding: 7px 14px;
+  }
+  .sidebar .history-label {
+    font-size: 0.75rem;
+  }
+  .sidebar .filter-pills, .sidebar .history-list {
+    font-size: 0.85rem;
+  }
 </style>
 {% endblock %}
 
@@ -152,66 +333,118 @@
   </aside>
   <!-- Main Area -->
   <main class="main-area" style="position: relative;">
-    <div class="chat-area" id="chat-area" style="position:relative;">
-      <!-- Model Selection Centered (inline, not overlay) -->
-      <div id="model-select-center" style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:absolute;top:0;left:0;pointer-events:auto;">
-        <div style="font-size:1.1rem;font-weight:500;color:#fff;margin-bottom:20px;">Select Model</div>
-        <div style="display:flex;gap:16px;">
-          <button class="model-bubble" data-model="m8b-uncensored" style="background:transparent;color:#fff;border:1.5px solid #444;border-radius:999px;padding:10px 20px;font-size:0.98rem;font-weight:500;display:flex;align-items:center;gap:8px;transition:background 0.2s,border 0.2s;cursor:pointer;outline:none;">
-            <i class="fas fa-comment-dots" style="font-size:1.05rem;"></i> M8B-Uncensored
-          </button>
-          <button class="model-bubble" data-model="wai" style="background:transparent;color:#fff;border:1.5px solid #444;border-radius:999px;padding:10px 20px;font-size:0.98rem;font-weight:500;display:flex;align-items:center;gap:8px;transition:background 0.2s,border 0.2s;cursor:pointer;outline:none;">
-            <i class="fas fa-image" style="font-size:1.05rem;"></i> WAI SDXL (NSFW)
-          </button>
-          <button class="model-bubble" data-model="qwen-qwq" style="background:transparent;color:#fff;border:1.5px solid #444;border-radius:999px;padding:10px 20px;font-size:0.98rem;font-weight:500;display:flex;align-items:center;gap:8px;transition:background 0.2s,border 0.2s;cursor:pointer;outline:none;">
-            <i class="fas fa-comment-dots" style="font-size:1.05rem;"></i> Qwen QwQ 32b
-          </button>
-        </div>
-      </div>
-      <!-- Test Conversation -->
-      <div id="test-conversation" class="chat-conversation" style="display:none;">
-        <div class="chat-message-row user">
-          <div class="chat-message-avatar">U</div>
-          <div class="chat-message-content">Hello, what can you do?</div>
-          <div class="chat-message-actions"><button class="copy-btn" title="Copy"><i class="fas fa-copy"></i></button></div>
-              </div>
-        <div class="chat-message-row assistant">
-          <div class="chat-message-avatar">A</div>
-          <div class="chat-message-content">Hi! I can answer questions, generate images, and more. Try asking me anything!</div>
-          <div class="chat-message-actions"><button class="copy-btn" title="Copy"><i class="fas fa-copy"></i></button></div>
+    <div class="chat-main-inner">
+      <div class="chat-area" id="chat-area" style="position:relative;">
+        <div class="chat-messages-inner">
+          <!-- Model Selection Centered (inline, not overlay) -->
+          <div id="model-select-center" style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:absolute;top:0;left:0;pointer-events:auto;">
+            <div style="font-size:1.1rem;font-weight:500;color:#fff;margin-bottom:20px;">Select Model</div>
+            <div style="display:flex;gap:16px;">
+              <button class="model-bubble" data-model="m8b-uncensored" style="background:transparent;color:#fff;border:1.5px solid #444;border-radius:999px;padding:10px 20px;font-size:0.98rem;font-weight:500;display:flex;align-items:center;gap:8px;transition:background 0.2s,border 0.2s;cursor:pointer;outline:none;">
+                <i class="fas fa-comment-dots" style="font-size:1.05rem;"></i> M8B-Uncensored
+              </button>
+              <button class="model-bubble" data-model="wai" style="background:transparent;color:#fff;border:1.5px solid #444;border-radius:999px;padding:10px 20px;font-size:0.98rem;font-weight:500;display:flex;align-items:center;gap:8px;transition:background 0.2s,border 0.2s;cursor:pointer;outline:none;">
+                <i class="fas fa-image" style="font-size:1.05rem;"></i> WAI SDXL (NSFW)
+              </button>
+              <button class="model-bubble" data-model="qwen-qwq" style="background:transparent;color:#fff;border:1.5px solid #444;border-radius:999px;padding:10px 20px;font-size:0.98rem;font-weight:500;display:flex;align-items:center;gap:8px;transition:background 0.2s,border 0.2s;cursor:pointer;outline:none;">
+                <i class="fas fa-comment-dots" style="font-size:1.05rem;"></i> Qwen QwQ 32b
+              </button>
             </div>
-        <div class="chat-message-row user">
-          <div class="chat-message-avatar">U</div>
-          <div class="chat-message-content">Draw a cat surfing a wave.</div>
-          <div class="chat-message-actions"><button class="copy-btn" title="Copy"><i class="fas fa-copy"></i></button></div>
-        </div>
-        <div class="chat-message-row assistant">
-          <div class="chat-message-avatar">A</div>
-          <div class="chat-message-content">Here's an image of a cat surfing a wave! 🏄‍⬛🌊</div>
-          <div class="chat-message-actions"><button class="copy-btn" title="Copy"><i class="fas fa-copy"></i></button></div>
+          </div>
+          <!-- Test Conversation -->
+          <div id="test-conversation" class="chat-conversation" style="display:none;">
+            <div class="chat-message-row user">
+              <div class="chat-message-content">Hello, what can you do?</div>
+            </div>
+            <div class="chat-message-row assistant">
+              <div class="chat-message-avatar" style="background:#181818; border:2px solid #fff; display:flex; align-items:center; justify-content:center; width:32px; height:32px;">
+                <svg width="24" height="24" viewBox="0 0 59 59" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <g>
+                    <mask id="mask0" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="35" y="16" width="22" height="27">
+                      <path d="M35.2554 16.6075H56.3788V42.3927H35.2554V16.6075Z" fill="white"/>
+                    </mask>
+                    <g mask="url(#mask0)">
+                      <mask id="mask1" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="35" y="16" width="22" height="27">
+                        <path d="M45.7316 42.357C40.5529 42.357 36.2412 37.8586 35.3119 31.9122H40.3779C41.1041 35.0779 43.2269 37.37 45.7316 37.37C48.8373 37.37 51.3542 33.849 51.3542 29.5071C51.3542 25.1649 48.8373 21.643 45.7316 21.643C43.2261 21.643 41.1041 23.9351 40.3779 27.1011H35.311C36.2412 21.1553 40.5521 16.6569 45.7316 16.6569C51.5895 16.6569 56.3386 22.4106 56.3386 29.5071C56.3386 36.6035 51.5895 42.357 45.7316 42.357Z" fill="white"/>
+                      </mask>
+                      <g mask="url(#mask1)">
+                        <path d="M35.311 16.6569V42.357H56.3386V16.6569H35.311Z" fill="#fff"/>
+                      </g>
+                    </g>
+                    <mask id="mask2" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="2" y="16" width="52" height="27">
+                      <path d="M2.62305 16.6075H53.9021V42.3927H2.62305V16.6075Z" fill="white"/>
+                    </mask>
+                    <g mask="url(#mask2)">
+                      <mask id="mask3" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="2" y="16" width="52" height="27">
+                        <path d="M13.271 37.3701C16.3764 37.3701 18.8933 33.849 18.8933 29.5071C18.8933 25.1649 16.3764 21.643 13.271 21.643C10.1654 21.643 7.64845 25.164 7.64845 29.5071C7.64845 33.8499 10.1654 37.3701 13.271 37.3701ZM13.271 42.357C7.41314 42.357 2.66406 36.6035 2.66406 29.5071C2.66406 22.4106 7.41314 16.6569 13.271 16.6569C18.4244 16.6569 22.7191 21.1112 23.6771 27.0135H51.0619L53.8429 29.5071L51.0619 32.0004H23.6771C22.7191 37.903 18.4244 42.357 13.271 42.357Z" fill="white"/>
+                      </mask>
+                      <g mask="url(#mask3)">
+                        <path d="M2.66406 16.6569V42.357H53.8429V16.6569H2.66406Z" fill="#fff"/>
+                      </g>
+                    </g>
+                  </g>
+                </svg>
+              </div>
+              <div class="chat-message-content">Hi! I can answer questions, generate images, and more. Try asking me anything!</div>
+            </div>
+            <div class="chat-message-row user">
+              <div class="chat-message-content">Draw a cat surfing a wave.</div>
+            </div>
+            <div class="chat-message-row assistant">
+              <div class="chat-message-avatar" style="background:#181818; border:2px solid #fff; display:flex; align-items:center; justify-content:center; width:32px; height:32px;">
+                <svg width="24" height="24" viewBox="0 0 59 59" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <g>
+                    <mask id="mask0b" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="35" y="16" width="22" height="27">
+                      <path d="M35.2554 16.6075H56.3788V42.3927H35.2554V16.6075Z" fill="white"/>
+                    </mask>
+                    <g mask="url(#mask0b)">
+                      <mask id="mask1b" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="35" y="16" width="22" height="27">
+                        <path d="M45.7316 42.357C40.5529 42.357 36.2412 37.8586 35.3119 31.9122H40.3779C41.1041 35.0779 43.2269 37.37 45.7316 37.37C48.8373 37.37 51.3542 33.849 51.3542 29.5071C51.3542 25.1649 48.8373 21.643 45.7316 21.643C43.2261 21.643 41.1041 23.9351 40.3779 27.1011H35.311C36.2412 21.1553 40.5521 16.6569 45.7316 16.6569C51.5895 16.6569 56.3386 22.4106 56.3386 29.5071C56.3386 36.6035 51.5895 42.357 45.7316 42.357Z" fill="white"/>
+                      </mask>
+                      <g mask="url(#mask1b)">
+                        <path d="M35.311 16.6569V42.357H56.3386V16.6569H35.311Z" fill="#fff"/>
+                      </g>
+                    </g>
+                    <mask id="mask2b" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="2" y="16" width="52" height="27">
+                      <path d="M2.62305 16.6075H53.9021V42.3927H2.62305V16.6075Z" fill="white"/>
+                    </mask>
+                    <g mask="url(#mask2b)">
+                      <mask id="mask3b" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="2" y="16" width="52" height="27">
+                        <path d="M13.271 37.3701C16.3764 37.3701 18.8933 33.849 18.8933 29.5071C18.8933 25.1649 16.3764 21.643 13.271 21.643C10.1654 21.643 7.64845 25.164 7.64845 29.5071C7.64845 33.8499 10.1654 37.3701 13.271 37.3701ZM13.271 42.357C7.41314 42.357 2.66406 36.6035 2.66406 29.5071C2.66406 22.4106 7.41314 16.6569 13.271 16.6569C18.4244 16.6569 22.7191 21.1112 23.6771 27.0135H51.0619L53.8429 29.5071L51.0619 32.0004H23.6771C22.7191 37.903 18.4244 42.357 13.271 42.357Z" fill="white"/>
+                      </mask>
+                      <g mask="url(#mask3b)">
+                        <path d="M2.66406 16.6569V42.357H53.8429V16.6569H2.66406Z" fill="#fff"/>
+                      </g>
+                    </g>
+                  </g>
+                </svg>
+              </div>
+              <div class="chat-message-content">Here's an image of a cat surfing a wave! 🏄‍⬛🌊</div>
+            </div>
+          </div>
+          <!-- Add more conversations here as needed -->
         </div>
       </div>
-      <!-- Add more conversations here as needed -->
-    </div>
-    <form class="chat-input-bar" autocomplete="off" style="padding-bottom:10px;">
-      <div class="chat-input-inner" style="max-width:800px;min-height:36px;padding:4px 12px;">
-        <div id="chat-selected-model-short" style="background:#232323;color:#fff;border-radius:999px;padding:4px 14px;font-size:1rem;font-weight:600;display:none;align-items:center;gap:7px;margin-right:10px;">
-          <span id="current-model-icon" style="font-size:1.1rem;display:flex;align-items:center;"></span>
-          <span id="current-model-pill"></span>
+      <form class="chat-input-bar" autocomplete="off" style="padding-bottom:10px;">
+        <div class="chat-input-inner" style="min-height:36px;padding:4px 12px;">
+          <div id="chat-selected-model-short" style="background:#232323;color:#fff;border-radius:999px;padding:4px 14px;font-size:1rem;font-weight:600;display:none;align-items:center;gap:7px;margin-right:10px;">
+            <span id="current-model-icon" style="font-size:1.1rem;display:flex;align-items:center;"></span>
+            <span id="current-model-pill"></span>
+          </div>
+          <textarea placeholder="Type your message..." rows="1" style="min-height:28px;font-size:1rem;"></textarea>
+          <button type="submit"><i class="fas fa-paper-plane"></i></button>
         </div>
-        <textarea placeholder="Type your message..." rows="1" style="min-height:28px;font-size:1rem;"></textarea>
-        <button type="submit"><i class="fas fa-paper-plane"></i></button>
-      </div>
-    </form>
-    <!-- Model Selection Overlay (hidden by default, show with JS) -->
-    <div id="model-select-overlay" class="model-select-overlay" style="display: none;">
-      <div class="model-select-title">Choose your preferred model</div>
-      <div class="model-select-pills">
-        <button class="model-select-pill" data-model="m8b-uncensored">📝 M8B-Uncensored</button>
-        <button class="model-select-pill" data-model="qwen-qwq-32b">📝 Qwen QwQ 32b</button>
-        <button class="model-select-pill" data-model="wai-sdxl">🖼️ WAI SDXL (NSFW)</button>
-        <button class="model-select-pill disabled" disabled>⏳ More coming soon...</button>
+      </form>
+      <!-- Model Selection Overlay (hidden by default, show with JS) -->
+      <div id="model-select-overlay" class="model-select-overlay" style="display: none;">
+        <div class="model-select-title">Choose your preferred model</div>
+        <div class="model-select-pills">
+          <button class="model-select-pill" data-model="m8b-uncensored">📝 M8B-Uncensored</button>
+          <button class="model-select-pill" data-model="qwen-qwq-32b">📝 Qwen QwQ 32b</button>
+          <button class="model-select-pill" data-model="wai-sdxl">🖼️ WAI SDXL (NSFW)</button>
+          <button class="model-select-pill disabled" disabled>⏳ More coming soon...</button>
 </div>
+      </div>
     </div>
   </main>
 </div>
@@ -219,10 +452,18 @@
 // Sidebar collapse logic
 const sidebar = document.getElementById('sidebar');
 const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
+const playgroundRoot = document.querySelector('.playground-root');
 sidebarToggleBtn.addEventListener('click', () => {
   sidebar.classList.toggle('collapsed');
   sidebarToggleBtn.querySelector('i').classList.toggle('fa-angle-left');
   sidebarToggleBtn.querySelector('i').classList.toggle('fa-angle-right');
+  if (playgroundRoot) {
+    if (sidebar.classList.contains('collapsed')) {
+      playgroundRoot.classList.add('sidebar-collapsed');
+    } else {
+      playgroundRoot.classList.remove('sidebar-collapsed');
+    }
+  }
 });
 // History filter logic
 const filterPills = document.querySelectorAll('.filter-pill');
