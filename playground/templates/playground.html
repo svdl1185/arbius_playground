@@ -6,17 +6,21 @@
 {% block extra_css %}
 <style>
   html, body {
-    height: 100%; min-height: 100%; background: #0a0a0a; color: #fff; font-family: 'Inter', sans-serif;
-    /* overflow: hidden; */
+    height: 100vh !important;
+    min-height: 100vh !important;
+    overflow: hidden !important;
+    background: #0a0a0a;
+    color: #fff;
+    font-family: 'Inter', sans-serif;
   }
-  .navbar {
-    width: 100%; background: #0a0a0a; border-bottom: 1px solid #222; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; height: 64px; min-height: 64px;
+  .playground-root {
+    display: flex;
+    height: 100vh !important;
+    min-height: 0 !important;
+    background: #0a0a0a;
+    width: 100%;
+    overflow: hidden !important;
   }
-  .navbar-logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.6rem; color: #fff; text-decoration: none; }
-  .navbar-wallet { display: flex; align-items: center; gap: 10px; margin-right: 36px; }
-  .wallet-btn-outline { background: rgba(0,0,0,0.55) !important; color: white !important; border: 1.5px solid white !important; box-shadow: none !important; transition: background 0.2s, color 0.2s, border 0.2s; backdrop-filter: blur(2px); padding: 8px 18px; border-radius: 12px; font-weight: 600; font-size: 1.05rem; }
-  .wallet-btn-outline:hover { background: rgba(0,0,0,0.75) !important; color: #fff !important; }
-  .playground-root { display: flex; height: calc(100vh - 64px); min-height: 0; background: #0a0a0a; /* overflow: visible; */ width: 100%; }
   .sidebar { width: 260px; background: #181818; border-right: 1px solid #222; display: flex; flex-direction: column; transition: width 0.3s; min-width: 56px; position: relative; overflow: visible; }
   .sidebar.collapsed {
     width: 18px !important;
@@ -311,6 +315,11 @@
     justify-content: center !important;
     gap: 0 !important;
   }
+  .navbar-wallet {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
   .wallet-connected-dropdown {
     display: inline-block;
     position: relative;
@@ -373,25 +382,36 @@
 {% endblock %}
 
 {% block content %}
-<!-- Navbar -->
-<nav class="navbar">
-  <a href="/" class="navbar-logo">
-    <img src="{% static 'arbius.ef337b97.svg' %}" alt="Arbius Logo" class="inline-block w-7 h-7" />
-    Arbius
-  </a>
-  <div class="navbar-wallet">
-    <button id="connect-wallet-btn" class="wallet-btn-outline">Connect</button>
-    <div id="wallet-connected-container" class="wallet-connected-dropdown" style="display:none;position:relative;">
-      <button id="navbar-wallet-address-pill" class="wallet-address-pill">@wallet</button>
-      <div id="navbar-wallet-dropdown-menu" class="wallet-dropdown-menu" style="display:none;">
-        <a href="#" class="wallet-dropdown-item"><img src="https://arbiscan.io/images/svg/brands/arbitrum.svg" style="width:18px;height:18px;vertical-align:middle;margin-right:8px;">Arbiscan</a>
-        <a href="#" class="wallet-dropdown-item"><i class="fas fa-chart-pie" style="width:18px;margin-right:8px;"></i>Usage</a>
-        <button id="disconnect-wallet-btn" class="wallet-dropdown-item"><i class="fas fa-unlink" style="width:18px;margin-right:8px;"></i>Disconnect</button>
+<!-- Navigation -->
+<nav class="nav-glass w-full fixed top-0 z-30 transition-all duration-300">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16 relative">
+    <!-- Logo and Name on Left -->
+    <div class="flex items-center gap-3" style="margin-left: -36px;">
+      <a href="{% url 'home' %}" class="flex items-center gap-2 font-bold text-2xl text-white">
+        <img src="{% static 'arbius.ef337b97.svg' %}" alt="Arbius Logo" class="inline-block w-7 h-7" />
+        Arbius
+      </a>
+    </div>
+    
+    <!-- Wallet/Actions on Right -->
+    <div class="flex items-center gap-3">
+      <!-- Desktop Wallet Section -->
+      <div class="navbar-wallet">
+        <button id="connect-wallet-btn" class="wallet-btn-outline">Connect</button>
+        <div id="wallet-connected-container" class="wallet-connected-dropdown" style="display:none;position:relative;">
+          <button id="navbar-wallet-address-pill" class="wallet-address-pill">@wallet</button>
+          <div id="navbar-wallet-dropdown-menu" class="wallet-dropdown-menu" style="display:none;">
+            <a href="#" class="wallet-dropdown-item"><img src="https://arbiscan.io/images/svg/brands/arbitrum.svg" style="width:18px;height:18px;vertical-align:middle;margin-right:8px;">Arbiscan</a>
+            <a href="#" class="wallet-dropdown-item"><i class="fas fa-chart-pie" style="width:18px;margin-right:8px;"></i>Usage</a>
+            <button id="disconnect-wallet-btn" class="wallet-dropdown-item"><i class="fas fa-unlink" style="width:18px;margin-right:8px;"></i>Disconnect</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </nav>
-<div class="playground-root">
+
+<div class="playground-root" style="margin-top: 64px;">
   <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
     <button class="sidebar-toggle-btn" id="sidebar-toggle-btn"><i class="fas fa-angle-left"></i></button>
@@ -406,13 +426,12 @@
       <button class="filter-pill" data-type="video"><i class="fas fa-video"></i></button>
       </div>
     <div class="history-list" id="history-list">
-      <div class="history-item" data-id="test" data-type="text"><i class="fas fa-comment-dots"></i> <span>Test Conversation</span></div>
-      <div class="history-item" data-id="basilisk" data-type="text"><i class="fas fa-comment-dots"></i> <span>What is Roko's Basilisk?</span></div>
-      <div class="history-item" data-id="malinois" data-type="text"><i class="fas fa-comment-dots"></i> <span>How to train a Belgian Malinois</span></div>
+      <div class="history-item" data-id="longexchange" data-type="text"><i class="fas fa-comment-dots"></i> <span>Long Exchange</span></div>
+      <div class="history-item" data-id="longtext" data-type="text"><i class="fas fa-comment-dots"></i> <span>Long Prompt/Answer</span></div>
+      <div class="history-item" data-id="coding" data-type="text"><i class="fas fa-comment-dots"></i> <span>Python Coding Q&A</span></div>
       <div class="history-item" data-id="elon" data-type="image"><i class="fas fa-image"></i> <span>Elon Musk naked with...</span></div>
-      <div class="history-item" data-id="koala" data-type="text"><i class="fas fa-comment-dots"></i> <span>Koala</span></div>
       <div class="history-item" data-id="film" data-type="video"><i class="fas fa-video"></i> <span>AI-generated short film</span></div>
-      </div>
+    </div>
   </aside>
   <!-- Main Area -->
   <main class="main-area" style="position: relative;">
@@ -434,76 +453,52 @@
               </button>
             </div>
           </div>
-          <!-- Test Conversation -->
-          <div id="test-conversation" class="chat-conversation" style="display:none;">
-            <div class="chat-message-row user">
-              <div class="chat-message-content">Hello, what can you do?</div>
-            </div>
-            <div class="chat-message-row assistant">
-              <div class="chat-message-avatar" style="background:#181818; border:2px solid #fff; display:flex; align-items:center; justify-content:center; width:32px; height:32px;">
-                <svg width="24" height="24" viewBox="0 0 59 59" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <g>
-                    <mask id="mask0" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="35" y="16" width="22" height="27">
-                      <path d="M35.2554 16.6075H56.3788V42.3927H35.2554V16.6075Z" fill="white"/>
-                    </mask>
-                    <g mask="url(#mask0)">
-                      <mask id="mask1" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="35" y="16" width="22" height="27">
-                        <path d="M45.7316 42.357C40.5529 42.357 36.2412 37.8586 35.3119 31.9122H40.3779C41.1041 35.0779 43.2269 37.37 45.7316 37.37C48.8373 37.37 51.3542 33.849 51.3542 29.5071C51.3542 25.1649 48.8373 21.643 45.7316 21.643C43.2261 21.643 41.1041 23.9351 40.3779 27.1011H35.311C36.2412 21.1553 40.5521 16.6569 45.7316 16.6569C51.5895 16.6569 56.3386 22.4106 56.3386 29.5071C56.3386 36.6035 51.5895 42.357 45.7316 42.357Z" fill="white"/>
-                      </mask>
-                      <g mask="url(#mask1)">
-                        <path d="M35.311 16.6569V42.357H56.3386V16.6569H35.311Z" fill="#fff"/>
-                      </g>
-                    </g>
-                    <mask id="mask2" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="2" y="16" width="52" height="27">
-                      <path d="M2.62305 16.6075H53.9021V42.3927H2.62305V16.6075Z" fill="white"/>
-                    </mask>
-                    <g mask="url(#mask2)">
-                      <mask id="mask3" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="2" y="16" width="52" height="27">
-                        <path d="M13.271 37.3701C16.3764 37.3701 18.8933 33.849 18.8933 29.5071C18.8933 25.1649 16.3764 21.643 13.271 21.643C10.1654 21.643 7.64845 25.164 7.64845 29.5071C7.64845 33.8499 10.1654 37.3701 13.271 37.3701ZM13.271 42.357C7.41314 42.357 2.66406 36.6035 2.66406 29.5071C2.66406 22.4106 7.41314 16.6569 13.271 16.6569C18.4244 16.6569 22.7191 21.1112 23.6771 27.0135H51.0619L53.8429 29.5071L51.0619 32.0004H23.6771C22.7191 37.903 18.4244 42.357 13.271 42.357Z" fill="white"/>
-                      </mask>
-                      <g mask="url(#mask3)">
-                        <path d="M2.66406 16.6569V42.357H53.8429V16.6569H2.66406Z" fill="#fff"/>
-                      </g>
-                    </g>
-                  </g>
-                </svg>
-              </div>
-              <div class="chat-message-content">Hi! I can answer questions, generate images, and more. Try asking me anything!</div>
-            </div>
-            <div class="chat-message-row user">
-              <div class="chat-message-content">Draw a cat surfing a wave.</div>
-            </div>
-            <div class="chat-message-row assistant">
-              <div class="chat-message-avatar" style="background:#181818; border:2px solid #fff; display:flex; align-items:center; justify-content:center; width:32px; height:32px;">
-                <svg width="24" height="24" viewBox="0 0 59 59" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <g>
-                    <mask id="mask0b" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="35" y="16" width="22" height="27">
-                      <path d="M35.2554 16.6075H56.3788V42.3927H35.2554V16.6075Z" fill="white"/>
-                    </mask>
-                    <g mask="url(#mask0b)">
-                      <mask id="mask1b" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="35" y="16" width="22" height="27">
-                        <path d="M45.7316 42.357C40.5529 42.357 36.2412 37.8586 35.3119 31.9122H40.3779C41.1041 35.0779 43.2269 37.37 45.7316 37.37C48.8373 37.37 51.3542 33.849 51.3542 29.5071C51.3542 25.1649 48.8373 21.643 45.7316 21.643C43.2261 21.643 41.1041 23.9351 40.3779 27.1011H35.311C36.2412 21.1553 40.5521 16.6569 45.7316 16.6569C51.5895 16.6569 56.3386 22.4106 56.3386 29.5071C56.3386 36.6035 51.5895 42.357 45.7316 42.357Z" fill="white"/>
-                      </mask>
-                      <g mask="url(#mask1b)">
-                        <path d="M35.311 16.6569V42.357H56.3386V16.6569H35.311Z" fill="#fff"/>
-                      </g>
-                    </g>
-                    <mask id="mask2b" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="2" y="16" width="52" height="27">
-                      <path d="M2.62305 16.6075H53.9021V42.3927H2.62305V16.6075Z" fill="white"/>
-                    </mask>
-                    <g mask="url(#mask2b)">
-                      <mask id="mask3b" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="2" y="16" width="52" height="27">
-                        <path d="M13.271 37.3701C16.3764 37.3701 18.8933 33.849 18.8933 29.5071C18.8933 25.1649 16.3764 21.643 13.271 21.643C10.1654 21.643 7.64845 25.164 7.64845 29.5071C7.64845 33.8499 10.1654 37.3701 13.271 37.3701ZM13.271 42.357C7.41314 42.357 2.66406 36.6035 2.66406 29.5071C2.66406 22.4106 7.41314 16.6569 13.271 16.6569C18.4244 16.6569 22.7191 21.1112 23.6771 27.0135H51.0619L53.8429 29.5071L51.0619 32.0004H23.6771C22.7191 37.903 18.4244 42.357 13.271 42.357Z" fill="white"/>
-                      </mask>
-                      <g mask="url(#mask3b)">
-                        <path d="M2.66406 16.6569V42.357H53.8429V16.6569H2.66406Z" fill="#fff"/>
-                      </g>
-                    </g>
-                  </g>
-                </svg>
-              </div>
-              <div class="chat-message-content">Here's an image of a cat surfing a wave! 🏄‍⬛🌊</div>
-            </div>
+          <!-- Long Exchange Conversation -->
+          <div id="longexchange-conversation" class="chat-conversation" style="display:none;">
+            <!-- 10+ prompt/answer pairs -->
+            <div class="chat-message-row user"><div class="chat-message-content">Hi! Can you help me learn about the solar system?</div></div>
+            <div class="chat-message-row assistant"><div class="chat-message-content">Absolutely! The solar system consists of the Sun and all the objects that orbit it, including eight planets, their moons, dwarf planets, asteroids, and comets.</div></div>
+            <div class="chat-message-row user"><div class="chat-message-content">Which planet is closest to the Sun?</div></div>
+            <div class="chat-message-row assistant"><div class="chat-message-content">Mercury is the closest planet to the Sun.</div></div>
+            <div class="chat-message-row user"><div class="chat-message-content">Which one is the largest?</div></div>
+            <div class="chat-message-row assistant"><div class="chat-message-content">Jupiter is the largest planet in our solar system.</div></div>
+            <div class="chat-message-row user"><div class="chat-message-content">How many moons does Jupiter have?</div></div>
+            <div class="chat-message-row assistant"><div class="chat-message-content">Jupiter has 95 known moons as of 2024.</div></div>
+            <div class="chat-message-row user"><div class="chat-message-content">What is the asteroid belt?</div></div>
+            <div class="chat-message-row assistant"><div class="chat-message-content">The asteroid belt is a region between Mars and Jupiter where most of the solar system's asteroids are found.</div></div>
+            <div class="chat-message-row user"><div class="chat-message-content">Are there any dwarf planets?</div></div>
+            <div class="chat-message-row assistant"><div class="chat-message-content">Yes, there are several dwarf planets, including Pluto, Eris, Haumea, Makemake, and Ceres.</div></div>
+            <div class="chat-message-row user"><div class="chat-message-content">Why isn't Pluto a planet anymore?</div></div>
+            <div class="chat-message-row assistant"><div class="chat-message-content">In 2006, the IAU redefined the criteria for planethood, and Pluto did not meet all the requirements, so it was reclassified as a dwarf planet.</div></div>
+            <div class="chat-message-row user"><div class="chat-message-content">What's the hottest planet?</div></div>
+            <div class="chat-message-row assistant"><div class="chat-message-content">Venus is the hottest planet in our solar system due to its thick, heat-trapping atmosphere.</div></div>
+            <div class="chat-message-row user"><div class="chat-message-content">Thank you! That was very helpful.</div></div>
+            <div class="chat-message-row assistant"><div class="chat-message-content">You're welcome! Let me know if you have more questions about space or anything else.</div></div>
+          </div>
+          <!-- Long Prompt/Answer Conversation -->
+          <div id="longtext-conversation" class="chat-conversation" style="display:none;">
+            <div class="chat-message-row user"><div class="chat-message-content">Can you write a detailed essay about the history and impact of the printing press, including its technological evolution, cultural significance, and influence on modern society?</div></div>
+            <div class="chat-message-row assistant"><div class="chat-message-content">Certainly! The printing press, invented by Johannes Gutenberg in the mid-15th century, revolutionized the way information was disseminated. Prior to its invention, books were copied by hand, a laborious and error-prone process that made books rare and expensive. Gutenberg's press used movable type, allowing for the mass production of books and written material. This technological leap made literature and scientific works accessible to a much broader audience, fueling the Renaissance, the Reformation, and the Scientific Revolution. Over the centuries, the printing press evolved from manual to steam-powered and then to digital printing, each stage increasing speed, efficiency, and accessibility. Culturally, the press broke the monopoly of the literate elite, democratizing knowledge and empowering social change. In modern society, the legacy of the printing press is seen in the rapid spread of information, the rise of literacy, and the foundation it laid for the information age. Its influence persists in both traditional publishing and the digital communication platforms we use today.</div></div>
+          </div>
+          <!-- Coding Q&A Conversation -->
+          <div id="coding-conversation" class="chat-conversation" style="display:none;">
+            <div class="chat-message-row user"><div class="chat-message-content">How do I reverse a string in Python?</div></div>
+            <div class="chat-message-row assistant"><div class="chat-message-content">You can reverse a string in Python using slicing:
+<pre><code>my_string = "hello world"
+reversed_string = my_string[::-1]
+print(reversed_string)  # Output: dlrow olleh
+</code></pre>
+This uses the slice notation <code>[::-1]</code> to step backwards through the string.</div></div>
+          </div>
+          <!-- Image Conversation (Elon) -->
+          <div id="elon-conversation" class="chat-conversation" style="display:none;">
+            <div class="chat-message-row user"><div class="chat-message-content">Draw Elon Musk naked with a dog on Mars.</div></div>
+            <div class="chat-message-row assistant"><div class="chat-message-content">Here is your AI-generated image of Elon Musk naked with a dog on Mars! <img src="https://placehold.co/400x300?text=Elon+Musk+on+Mars" alt="Elon Musk on Mars" style="display:block;margin-top:8px;border-radius:12px;max-width:100%;" /></div></div>
+          </div>
+          <!-- Video Conversation (Film) -->
+          <div id="film-conversation" class="chat-conversation" style="display:none;">
+            <div class="chat-message-row user"><div class="chat-message-content">Create a short AI-generated film about a robot learning to love.</div></div>
+            <div class="chat-message-row assistant"><div class="chat-message-content">Here is your AI-generated video: <video controls style="display:block;margin-top:8px;border-radius:12px;max-width:100%;"><source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">Your browser does not support the video tag.</video></div></div>
           </div>
           <!-- Add more conversations here as needed -->
         </div>
@@ -649,9 +644,11 @@ historyItems.forEach(item => {
     showConversation(convoId);
     // For demo: set model to M8B for test, Qwen for basilisk, WAI for elon, etc.
     let model = null;
-    if (item.getAttribute('data-id') === 'test') model = 'm8b-uncensored';
-    else if (item.getAttribute('data-id') === 'basilisk') model = 'qwen-qwq';
+    if (item.getAttribute('data-id') === 'longexchange') model = 'm8b-uncensored';
+    else if (item.getAttribute('data-id') === 'longtext') model = 'qwen-qwq';
+    else if (item.getAttribute('data-id') === 'coding') model = 'wai';
     else if (item.getAttribute('data-id') === 'elon') model = 'wai';
+    else if (item.getAttribute('data-id') === 'film') model = 'wai';
     else model = 'm8b-uncensored'; // fallback
     showModelPill(model);
     hideModelSelect();
