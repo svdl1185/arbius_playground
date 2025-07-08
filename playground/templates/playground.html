@@ -346,7 +346,20 @@
 <!-- Sticky Chat Input (always visible at the bottom) -->
 <div id="sticky-chat-input" class="fixed bottom-6 z-30 transition-all duration-300" style="left: 0; margin-left: 288px; width: calc(100vw - 288px); max-width: none; transform: none;">
   <form id="chat-form" class="w-full max-w-3xl mx-auto flex items-center justify-center" autocomplete="off" style="background: none; box-shadow: none; max-width: 900px;">
-    <div class="flex w-full items-center bg-black/80 border border-white rounded-full pl-4 pr-1 py-2 shadow-lg backdrop-blur-md" style="box-shadow: 0 6px 32px 0 rgba(0,0,0,0.18); border: 1.5px solid white;">
+    <div class="flex w-full items-center bg-black/80 border border-white rounded-full pl-4 pr-1 py-2 shadow-lg backdrop-blur-md relative" style="box-shadow: 0 6px 32px 0 rgba(0,0,0,0.18); border: 1.5px solid white;">
+      <!-- Model Selector Icon/Button -->
+      <button id="chat-model-selector" type="button" class="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition text-white mr-2" style="position: relative;">
+        <i class="fas fa-robot"></i>
+        <span id="chat-selected-model-short" class="ml-1 text-xs font-bold">M8B</span>
+        <i class="fas fa-chevron-down ml-1 text-xs"></i>
+      </button>
+      <!-- Model Dropdown (hidden by default) -->
+      <div id="chat-model-dropdown" class="absolute left-0 bottom-14 bg-cardbg border border-border rounded-xl shadow-lg w-64 z-50 hidden flex-col">
+        <button class="model-dropdown-item px-6 py-3 text-left text-white hover:bg-white/10 w-full flex items-center gap-2" data-model="m8b-uncensored"><i class="fas fa-brain"></i> M8B-Uncensored</button>
+        <button class="model-dropdown-item px-6 py-3 text-left text-white hover:bg-white/10 w-full flex items-center gap-2" data-model="wai"><i class="fas fa-image"></i> WAI SDXL (NSFW)</button>
+        <button class="model-dropdown-item px-6 py-3 text-left text-white hover:bg-white/10 w-full flex items-center gap-2" data-model="qwen-qwq"><i class="fas fa-star"></i> Qwen QwQ 32b</button>
+        <button class="model-dropdown-item px-6 py-3 text-left text-gray-400 w-full flex items-center gap-2 cursor-not-allowed" data-model="deepseek" disabled><i class="fas fa-code"></i> Deepseek-coder-v2</button>
+      </div>
       <textarea 
         id="message-input" 
         placeholder="Type your message..." 
@@ -487,5 +500,44 @@ sidebarCollapseBtn.addEventListener('click', () => {
 // Initial position
 updateCollapseBtnPosition();
 window.addEventListener('resize', updateCollapseBtnPosition);
+
+// Model selector for chat input
+const chatModelSelector = document.getElementById('chat-model-selector');
+const chatModelDropdown = document.getElementById('chat-model-dropdown');
+const chatSelectedModelShort = document.getElementById('chat-selected-model-short');
+
+chatModelSelector.addEventListener('click', (e) => {
+  e.stopPropagation();
+  chatModelDropdown.classList.toggle('hidden');
+});
+
+// Hide dropdown when clicking outside
+window.addEventListener('click', (e) => {
+  if (!chatModelDropdown.contains(e.target) && !chatModelSelector.contains(e.target)) {
+    chatModelDropdown.classList.add('hidden');
+  }
+});
+
+// Model selection logic for chat input
+chatModelDropdown.querySelectorAll('.model-dropdown-item').forEach(item => {
+  item.addEventListener('click', () => {
+    if (item.hasAttribute('disabled')) return;
+    const model = item.getAttribute('data-model');
+    let shortName = 'M8B';
+    if (model === 'm8b-uncensored') shortName = 'M8B';
+    else if (model === 'wai') shortName = 'WAI';
+    else if (model === 'qwen-qwq') shortName = 'Qwen';
+    else if (model === 'deepseek') shortName = 'Deepseek';
+    chatSelectedModelShort.textContent = shortName;
+    window.setSelectedModel(model);
+    chatModelDropdown.classList.add('hidden');
+    // Also update the main header model name
+    const currentModel = document.getElementById('current-model');
+    if (currentModel) currentModel.textContent = shortName;
+    // Also update the pill in the empty chat state if present
+    const selectedModel = document.getElementById('selected-model');
+    if (selectedModel) selectedModel.textContent = shortName;
+  });
+});
 </script>
 {% endblock %} 

@@ -548,16 +548,26 @@ class MetaMaskManager {
             const contract = new window.ethers.Contract(contractAddress, contractAbi, signer);
             
             // Prepare parameters
-            const defaultParams = {
+            let modelParams = {
                 version_: 0,
                 owner_: this.account,
-                model_: '0x6cb3eed9fe3f32da1910825b98bd49d537912c99410e7a35f30add137fd3b64c',
-                fee_: 28000000000000, // 0.0001 AIUS (in wei)
-                input_: this.encodeTaskInput()
+                model_: '0x6cb3eed9fe3f32da1910825b98bd49d537912c99410e7a35f30add137fd3b64c', // M8B default
+                fee_: 28000000000000, // M8B default
+                input_: this.encodeTaskInput(customParams.customPrompt)
             };
-            
-            // Merge custom parameters with defaults
-            const params = { ...defaultParams, ...customParams };
+            // Switch based on selected model
+            const selected = window.selectedModel || 'm8b-uncensored';
+            if (selected === 'qwen-qwq') {
+                modelParams.model_ = '0x89c39001e3b23d2092bd998b62f07b523d23deb55e1627048b4ed47a4a38d5cc';
+                modelParams.fee_ = 7000000000000000;
+                modelParams.input_ = this.encodeTaskInputQwen(customParams.customPrompt);
+            } else if (selected === 'wai') {
+                modelParams.model_ = '0xa473c70e9d7c872ac948d20546bc79db55fa64ca325a4b229aaffddb7f86aae0';
+                modelParams.fee_ = 3500000000000000;
+                modelParams.input_ = this.encodeTaskInputWai(customParams.customPrompt);
+            }
+            // Merge with any custom params (overrides)
+            const params = { ...modelParams, ...customParams };
 
             // --- ERC20 Approval Logic ---
             const aiusTokenAddress = '0x4a24B101728e07A52053c13FB4dB2BcF490CAbc3';
@@ -607,6 +617,22 @@ class MetaMaskManager {
             const receipt = await tx.wait();
             this.showSuccess('Transaction confirmed! Block: ' + receipt.blockNumber);
             
+            try {
+                // The event signature for TaskSubmitted
+                const eventSignature = "TaskSubmitted(bytes32,bytes32,uint256,address)";
+                const eventTopic = window.ethers.utils.id(eventSignature);
+                const log = receipt.logs.find(l => l.topics[0] === eventTopic);
+                if (log) {
+                    const idHex = log.topics[1];
+                    console.log("TaskSubmitted id:", idHex);
+                    this.showSuccess('TaskSubmitted id: ' + idHex);
+                } else {
+                    console.warn("TaskSubmitted event not found in logs.");
+                }
+            } catch (e) {
+                console.error("Error extracting TaskSubmitted id:", e);
+            }
+            
             return tx.hash;
         } catch (err) {
             console.error('Task submission failed:', err);
@@ -618,12 +644,31 @@ class MetaMaskManager {
 
 
     encodeTaskInput(customPrompt = null) {
-        // Build the prompt with only the user part replaced
+        // M8B default
         const prompt = `<|begin_of_text|><|start_header_id|>system<|end_header_id|> You are a helpful assistant.<|eot_id|><|start_header_id|>user<|end_header_id|> ${customPrompt || ''} Additional instruction: Make sure to keep response short and concise.<|eot_id|><|start_header_id|>assistant<|end_header_id|>`;
         const taskInput = {
             "prompt": prompt
         };
-        // Convert to JSON string and then to bytes
+        const jsonString = JSON.stringify(taskInput);
+        return window.ethers.utils.toUtf8Bytes(jsonString);
+    }
+
+    encodeTaskInputQwen(customPrompt = null) {
+        // Qwen format
+        const prompt = `{"System prompt": "You are helpful AI assistant. Below is additional context, please respond the user query and use the context as reference if relevant. If the context contains relevant information assume that the function has already been executed."}{"MessageHistory":[],"User prompt":"${customPrompt || ''}"} Additional instruction: Make sure to keep response short and concise.`;
+        const taskInput = {
+            "prompt": prompt
+        };
+        const jsonString = JSON.stringify(taskInput);
+        return window.ethers.utils.toUtf8Bytes(jsonString);
+    }
+
+    encodeTaskInputWai(customPrompt = null) {
+        // WAI format
+        const prompt = `${customPrompt || ''}`;
+        const taskInput = {
+            "prompt": prompt
+        };
         const jsonString = JSON.stringify(taskInput);
         return window.ethers.utils.toUtf8Bytes(jsonString);
     }
@@ -631,8 +676,84 @@ class MetaMaskManager {
 
 }
 
-// Ensure MetaMaskManager is available globally
-if (typeof window !== 'undefined') {
+// === Model Selection Support (Refactored) ===
+(function() {
+    const MODEL_MAP = {
+        'm8b-uncensored': { short: 'M8B', label: 'M8B-Uncensored' },
+        'wai': { short: 'WAI', label: 'WAI SDXL (NSFW)' },
+        'qwen-qwq': { short: 'Qwen', label: 'Qwen QwQ 32b' },
+        'deepseek': { short: 'Deepseek', label: 'Deepseek-coder-v2' }
+    };
+    function getSavedModel() {
+        return localStorage.getItem('selectedModel') || 'm8b-uncensored';
+    }
+    function setSavedModel(model) {
+        localStorage.setItem('selectedModel', model);
+    }
+    function updateModelUI(model) {
+        // Chat input selector
+        const chatSelectedModelShort = document.getElementById('chat-selected-model-short');
+        if (chatSelectedModelShort && MODEL_MAP[model]) chatSelectedModelShort.textContent = MODEL_MAP[model].short;
+        // Main header
+        const currentModel = document.getElementById('current-model');
+        if (currentModel && MODEL_MAP[model]) currentModel.textContent = MODEL_MAP[model].short;
+        // Empty chat state pill
+        const selectedModel = document.getElementById('selected-model');
+        if (selectedModel && MODEL_MAP[model]) selectedModel.textContent = MODEL_MAP[model].short;
+        // Dropdown highlight (optional: add active class)
+        document.querySelectorAll('.model-dropdown-item').forEach(item => {
+            if (item.getAttribute('data-model') === model) {
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+            }
+        });
+        // Pills highlight
+        document.querySelectorAll('.model-pill').forEach(item => {
+            if (item.getAttribute('data-model') === model) {
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+            }
+        });
+    }
+    function setSelectedModel(model) {
+        window.selectedModel = model;
+        setSavedModel(model);
+        updateModelUI(model);
+    }
+    window.setSelectedModel = setSelectedModel;
+    window.getSelectedModel = getSavedModel;
+    // On DOMContentLoaded, sync UI and global
+    document.addEventListener('DOMContentLoaded', () => {
+        const model = getSavedModel();
+        window.selectedModel = model;
+        updateModelUI(model);
+        // Setup listeners for all model selectors
+        // Chat input dropdown
+        const chatModelDropdown = document.getElementById('chat-model-dropdown');
+        if (chatModelDropdown) {
+            chatModelDropdown.querySelectorAll('.model-dropdown-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    if (item.hasAttribute('disabled')) return;
+                    const model = item.getAttribute('data-model');
+                    setSelectedModel(model);
+                });
+            });
+        }
+        // Pills in header/empty state
+        document.querySelectorAll('.model-pill').forEach(item => {
+            item.addEventListener('click', () => {
+                const model = item.getAttribute('data-model');
+                setSelectedModel(model);
+            });
+        });
+    });
+})();
+
+
+// Initialize MetaMask manager when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
     window.metaMaskManager = new MetaMaskManager();
     
     // Add helper functions for easy access
@@ -656,13 +777,6 @@ if (typeof window !== 'undefined') {
             return await window.metaMaskManager.submitTask(params);
         }
     };
-    
-
-}
-
-// Initialize MetaMask manager when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    window.metaMaskManager = new MetaMaskManager();
     
     // Add click handlers to connect buttons
     const connectBtn = document.getElementById('connect-wallet-btn');
@@ -707,8 +821,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 userPrompt = messageInput.value.trim();
             }
             if (window.metaMaskManager) {
-                // Always use the user's input as the customPrompt
-                await window.metaMaskManager.submitTask({ input_: window.metaMaskManager.encodeTaskInput(userPrompt) });
+                await window.metaMaskManager.submitTask({ customPrompt: userPrompt });
             }
         });
     }
