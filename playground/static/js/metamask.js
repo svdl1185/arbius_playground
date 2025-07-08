@@ -349,69 +349,38 @@ class MetaMaskManager {
         const connectBtnMobile = document.getElementById('connect-wallet-btn-mobile');
         const disconnectBtn = document.getElementById('disconnect-wallet-btn');
         const disconnectBtnMobile = document.getElementById('disconnect-wallet-btn-mobile');
-        const walletAddress = document.getElementById('wallet-address');
-        const walletNetwork = document.getElementById('wallet-network');
-        const walletAddressMobile = document.getElementById('wallet-address-mobile');
         const walletConnectedContainer = document.getElementById('wallet-connected-container');
-        const walletConnectedMobile = document.getElementById('wallet-connected-mobile');
-        const aiusBalance = document.getElementById('aius-balance');
-        const aiusBalanceMobile = document.getElementById('aius-balance-mobile');
-        
+        const walletAddressPill = document.getElementById('wallet-address-pill');
+        const walletDropdownMenu = document.getElementById('wallet-dropdown-menu');
+        // Hide all by default
+        if (connectBtn) connectBtn.style.display = 'inline-flex';
+        if (walletConnectedContainer) walletConnectedContainer.style.display = 'none';
+        // Show correct UI
         if (this.isConnected && this.account) {
-            // Get current network
-            let networkName = 'Unknown';
-            try {
-                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-                if (chainId === this.arbitrumChainId) {
-                    networkName = 'Arbitrum One';
-                } else if (chainId === this.arbitrumTestnetChainId) {
-                    networkName = 'Arbitrum Sepolia';
-                } else {
-                    networkName = 'Other Network';
-                }
-            } catch (error) {
-                console.error('Error getting chain ID:', error);
-            }
-            // Desktop UI
             if (connectBtn) connectBtn.style.display = 'none';
-            if (walletConnectedContainer) walletConnectedContainer.style.display = 'flex';
-            if (walletAddress) {
-                walletAddress.textContent = `${this.account.slice(0, 6)}...${this.account.slice(-4)}`;
-                walletAddress.title = this.account;
-                walletAddress.onclick = () => {
-                    navigator.clipboard.writeText(this.account).then(() => this.showSuccess('Address copied to clipboard!'));
-                };
-                walletAddress.style.display = '';
+            if (walletConnectedContainer) walletConnectedContainer.style.display = 'inline-block';
+            // Update wallet pill for playground
+            const navbarWalletPill = document.getElementById('navbar-wallet-address-pill');
+            if (navbarWalletPill) {
+                navbarWalletPill.textContent = `@${this.account.slice(0, 6)}...${this.account.slice(-4)}`;
+                navbarWalletPill.title = this.account;
             }
-            if (walletNetwork) {
-                walletNetwork.textContent = networkName;
-                walletNetwork.style.display = '';
+            // Update wallet pill for homepage
+            const homeWalletPill = document.getElementById('wallet-address-pill');
+            if (homeWalletPill) {
+                homeWalletPill.textContent = `@${this.account.slice(0, 6)}...${this.account.slice(-4)}`;
+                homeWalletPill.title = this.account;
             }
-            if (aiusBalance) aiusBalance.style.display = '';
-            if (disconnectBtn) disconnectBtn.style.display = 'flex';
-            // Mobile UI
-            if (connectBtnMobile) connectBtnMobile.style.display = 'none';
-            if (walletConnectedMobile) walletConnectedMobile.style.display = 'flex';
-            if (walletAddressMobile) {
-                walletAddressMobile.textContent = `${this.account.slice(0, 6)}...${this.account.slice(-4)}`;
-                walletAddressMobile.title = this.account;
-                walletAddressMobile.onclick = () => {
-                    navigator.clipboard.writeText(this.account).then(() => this.showSuccess('Address copied to clipboard!'));
-                };
-                walletAddressMobile.style.display = '';
+            // Set Arbiscan link
+            const arbiscanLink = document.querySelector('.wallet-dropdown-item[href^="https://arbiscan.io"]') || document.querySelector('.wallet-dropdown-item[href="#"]');
+            if (arbiscanLink) {
+                arbiscanLink.href = `https://arbiscan.io/address/${this.account}`;
+                arbiscanLink.target = '_blank';
+                arbiscanLink.rel = 'noopener noreferrer';
             }
-            if (aiusBalanceMobile) aiusBalanceMobile.style.display = '';
-            if (disconnectBtnMobile) disconnectBtnMobile.style.display = 'block';
-            this.updateBalanceUI();
-        } else {
-            // Desktop UI
-            if (connectBtn) connectBtn.style.display = 'inline-flex';
-            if (walletConnectedContainer) walletConnectedContainer.style.display = 'none';
-            // Mobile UI
-            if (connectBtnMobile) connectBtnMobile.style.display = 'inline-flex';
-            if (walletConnectedMobile) walletConnectedMobile.style.display = 'none';
-            this.updateBalanceUI();
         }
+        // Hide dropdown menu by default
+        if (walletDropdownMenu) walletDropdownMenu.style.display = 'none';
     }
 
     showMetaMaskNotInstalled() {
@@ -822,6 +791,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (window.metaMaskManager) {
                 await window.metaMaskManager.submitTask({ customPrompt: userPrompt });
+            }
+        });
+    }
+
+    // Wallet dropdown logic (ensure only one menu is open at a time)
+    const walletAddressPill = document.getElementById('wallet-address-pill');
+    const walletDropdownMenu = document.getElementById('wallet-dropdown-menu');
+    if (walletAddressPill && walletDropdownMenu) {
+        walletAddressPill.addEventListener('click', (e) => {
+            e.stopPropagation();
+            walletDropdownMenu.style.display = walletDropdownMenu.style.display === 'block' ? 'none' : 'block';
+        });
+        document.addEventListener('click', (e) => {
+            if (!walletDropdownMenu.contains(e.target) && e.target !== walletAddressPill) {
+                walletDropdownMenu.style.display = 'none';
             }
         });
     }

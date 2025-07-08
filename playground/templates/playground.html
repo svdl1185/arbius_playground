@@ -13,7 +13,7 @@
     width: 100%; background: #0a0a0a; border-bottom: 1px solid #222; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; height: 64px; min-height: 64px;
   }
   .navbar-logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.6rem; color: #fff; text-decoration: none; }
-  .navbar-wallet { display: flex; align-items: center; gap: 10px; }
+  .navbar-wallet { display: flex; align-items: center; gap: 10px; margin-right: 36px; }
   .wallet-btn-outline { background: rgba(0,0,0,0.55) !important; color: white !important; border: 1.5px solid white !important; box-shadow: none !important; transition: background 0.2s, color 0.2s, border 0.2s; backdrop-filter: blur(2px); padding: 8px 18px; border-radius: 12px; font-weight: 600; font-size: 1.05rem; }
   .wallet-btn-outline:hover { background: rgba(0,0,0,0.75) !important; color: #fff !important; }
   .playground-root { display: flex; height: calc(100vh - 64px); min-height: 0; background: #0a0a0a; /* overflow: visible; */ width: 100%; }
@@ -294,6 +294,81 @@
   .sidebar .filter-pills, .sidebar .history-list {
     font-size: 0.85rem;
   }
+  .wallet-btn-outline, .navbar-wallet .wallet-btn-outline, #connect-wallet-btn, #connect-wallet-btn-mobile {
+    background: #fff !important;
+    color: #181828 !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 999px !important;
+    font-size: 0.95rem !important;
+    font-weight: 500 !important;
+    padding: 6px 22px !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    display: inline-flex;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0 !important;
+  }
+  .wallet-connected-dropdown {
+    display: inline-block;
+    position: relative;
+    vertical-align: middle;
+  }
+  .wallet-address-pill {
+    background: transparent;
+    color: #fff;
+    border: 2px solid #fff;
+    border-radius: 999px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    padding: 6px 22px;
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-bottom: 6px;
+    transition: border 0.2s, background 0.2s;
+  }
+  .wallet-address-pill:hover, .wallet-address-pill:focus {
+    background: rgba(255,255,255,0.08);
+    border-color: #fff;
+  }
+  .wallet-dropdown-menu {
+    position: absolute;
+    top: 110%;
+    left: 0;
+    background: #232a3a;
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+    padding: 22px 0 18px 0;
+    min-width: 210px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .wallet-dropdown-item {
+    color: #fff;
+    text-decoration: none;
+    font-size: 1.08rem;
+    padding: 12px 28px 12px 22px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-radius: 12px;
+  }
+  .wallet-dropdown-item:hover {
+    background: #2e3542;
+  }
 </style>
 {% endblock %}
 
@@ -301,11 +376,19 @@
 <!-- Navbar -->
 <nav class="navbar">
   <a href="/" class="navbar-logo">
-        <img src="{% static 'arbius.ef337b97.svg' %}" alt="Arbius Logo" class="inline-block w-7 h-7" />
-        Arbius
-      </a>
+    <img src="{% static 'arbius.ef337b97.svg' %}" alt="Arbius Logo" class="inline-block w-7 h-7" />
+    Arbius
+  </a>
   <div class="navbar-wallet">
-    <button class="wallet-btn-outline"><i class="fas fa-wallet"></i> Connect Wallet</button>
+    <button id="connect-wallet-btn" class="wallet-btn-outline">Connect</button>
+    <div id="wallet-connected-container" class="wallet-connected-dropdown" style="display:none;position:relative;">
+      <button id="navbar-wallet-address-pill" class="wallet-address-pill">@wallet</button>
+      <div id="navbar-wallet-dropdown-menu" class="wallet-dropdown-menu" style="display:none;">
+        <a href="#" class="wallet-dropdown-item"><img src="https://arbiscan.io/images/svg/brands/arbitrum.svg" style="width:18px;height:18px;vertical-align:middle;margin-right:8px;">Arbiscan</a>
+        <a href="#" class="wallet-dropdown-item"><i class="fas fa-chart-pie" style="width:18px;margin-right:8px;"></i>Usage</a>
+        <button id="disconnect-wallet-btn" class="wallet-dropdown-item"><i class="fas fa-unlink" style="width:18px;margin-right:8px;"></i>Disconnect</button>
+      </div>
+    </div>
   </div>
 </nav>
 <div class="playground-root">
@@ -629,5 +712,21 @@ function isChatEmpty() {
   return !chatArea.querySelector('.chat-message-row');
 }
 // Hide model select if a message is sent (optional: you can also call this after sending a message)
+// Wallet dropdown logic (guaranteed to run after DOM and after all other JS)
+document.addEventListener('DOMContentLoaded', function() {
+  const walletAddressPill = document.getElementById('navbar-wallet-address-pill');
+  const walletDropdownMenu = document.getElementById('navbar-wallet-dropdown-menu');
+  if (walletAddressPill && walletDropdownMenu) {
+    walletAddressPill.addEventListener('click', function(e) {
+      e.stopPropagation();
+      walletDropdownMenu.style.display = walletDropdownMenu.style.display === 'block' ? 'none' : 'block';
+    });
+    document.addEventListener('click', function(e) {
+      if (!walletDropdownMenu.contains(e.target) && e.target !== walletAddressPill) {
+        walletDropdownMenu.style.display = 'none';
+      }
+    });
+  }
+});
 </script>
 {% endblock %} 
