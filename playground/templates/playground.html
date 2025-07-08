@@ -7,7 +7,7 @@
 <style>
   html, body {
     height: 100%; min-height: 100%; background: #0a0a0a; color: #fff; font-family: 'Inter', sans-serif;
-    overflow: hidden;
+    /* overflow: hidden; */
   }
   .navbar {
     width: 100%; background: #0a0a0a; border-bottom: 1px solid #222; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; height: 64px; min-height: 64px;
@@ -16,9 +16,15 @@
   .navbar-wallet { display: flex; align-items: center; gap: 10px; }
   .wallet-btn-outline { background: rgba(0,0,0,0.55) !important; color: white !important; border: 1.5px solid white !important; box-shadow: none !important; transition: background 0.2s, color 0.2s, border 0.2s; backdrop-filter: blur(2px); padding: 8px 18px; border-radius: 12px; font-weight: 600; font-size: 1.05rem; }
   .wallet-btn-outline:hover { background: rgba(0,0,0,0.75) !important; color: #fff !important; }
-  .playground-root { display: flex; height: calc(100vh - 64px); min-height: 0; background: #0a0a0a; }
-  .sidebar { width: 260px; background: #181818; border-right: 1px solid #222; display: flex; flex-direction: column; transition: width 0.3s; min-width: 56px; position: relative; }
-  .sidebar.collapsed { width: 56px !important; min-width: 56px !important; }
+  .playground-root { display: flex; height: calc(100vh - 64px); min-height: 0; background: #0a0a0a; /* overflow: visible; */ }
+  .sidebar { width: 260px; background: #181818; border-right: 1px solid #222; display: flex; flex-direction: column; transition: width 0.3s; min-width: 56px; position: relative; overflow: visible; }
+  .sidebar.collapsed {
+    width: 18px !important;
+    min-width: 18px !important;
+    overflow: visible !important;
+    position: relative;
+    background: #181818;
+  }
   .sidebar-header { padding: 18px 18px 0 18px; display: flex; flex-direction: column; gap: 12px; }
   .sidebar .history-label { font-size: 0.8rem; color: #888; letter-spacing: 0.1em; margin: 18px 0 8px 18px; text-transform: uppercase; font-weight: 600; }
   .sidebar .filter-pills { display: flex; gap: 8px; margin: 0 0 10px 18px; }
@@ -27,9 +33,44 @@
   .sidebar .history-list { flex: 1; overflow-y: auto; padding: 0 0 18px 0; margin: 0; }
   .history-item { display: flex; align-items: center; gap: 10px; padding: 9px 18px; font-size: 1rem; color: #ccc; cursor: pointer; border: none; background: none; width: 100%; transition: background 0.2s, color 0.2s; border-radius: 8px; }
   .history-item.selected, .history-item:hover { background: #232323; color: #fff; }
-  .sidebar-toggle-btn { position: absolute; top: 80px; right: -18px; z-index: 60; background: #232323; color: #fff; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.10); transition: background 0.2s; }
+  .sidebar-toggle-btn {
+    position: absolute;
+    top: 50%;
+    left: 100%;
+    transform: translate(-50%, -50%);
+    z-index: 60;
+    background: #232323;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+    transition: background 0.2s, left 0.3s;
+  }
   .sidebar-toggle-btn:hover { background: #333; }
-  .sidebar.collapsed .sidebar-header, .sidebar.collapsed .history-label, .sidebar.collapsed .filter-pills, .sidebar.collapsed .model-pills { display: none !important; }
+  .sidebar.collapsed .sidebar-header,
+  .sidebar.collapsed .history-label,
+  .sidebar.collapsed .filter-pills,
+  .sidebar.collapsed .model-pills,
+  .sidebar.collapsed .history-list {
+    display: none !important;
+  }
+  .sidebar.collapsed {
+    width: 18px !important;
+    min-width: 18px !important;
+    overflow: visible !important;
+    position: relative;
+    background: #181818;
+  }
+  .sidebar.collapsed .sidebar-toggle-btn {
+    left: 100%;
+    transform: translate(-50%, -50%);
+  }
   .sidebar.collapsed .history-item { justify-content: center; padding-left: 0; padding-right: 0; }
   .sidebar.collapsed .history-item span { display: none; }
   .sidebar.collapsed .history-item i { margin: 0; }
@@ -62,6 +103,16 @@
   .model-select-pill.disabled { opacity: 0.5; cursor: not-allowed; }
   @media (max-width: 900px) { .sidebar { width: 56px !important; min-width: 56px !important; } .sidebar:not(.collapsed) { width: 220px !important; } .main-header, .chat-message-row { padding-left: 16px; padding-right: 16px; } }
   @media (max-width: 600px) { .main-header, .chat-message-row { padding-left: 4px; padding-right: 4px; } .chat-input-inner { max-width: 98vw; } }
+#chat-selected-model-short {
+  margin-right: 2px !important;
+}
+.chat-input-inner button {
+  margin-left: 2px !important;
+}
+.chat-input-inner {
+  padding-left: 6px !important;
+  padding-right: 6px !important;
+}
 </style>
 {% endblock %}
 
@@ -80,7 +131,9 @@
   <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
     <button class="sidebar-toggle-btn" id="sidebar-toggle-btn"><i class="fas fa-angle-left"></i></button>
-    <div class="sidebar-header"></div>
+    <div class="sidebar-header">
+      <button id="new-chat-btn" style="background:#fff;color:#181818;font-weight:600;border:none;border-radius:999px;padding:10px 0;margin-bottom:18px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:1.05rem;cursor:pointer;width:100%;"><i class="fas fa-plus"></i> <span style="font-size:1rem;">New Chat</span></button>
+    </div>
     <div class="history-label">History</div>
     <div class="filter-pills">
       <button class="filter-pill active" data-type="all">All</button>
@@ -89,35 +142,34 @@
       <button class="filter-pill" data-type="video"><i class="fas fa-video"></i></button>
       </div>
     <div class="history-list" id="history-list">
-      <div class="history-item selected" data-id="test" data-type="text"><i class="fas fa-comment-dots"></i> <span>Test Conversation</span></div>
+      <div class="history-item" data-id="test" data-type="text"><i class="fas fa-comment-dots"></i> <span>Test Conversation</span></div>
       <div class="history-item" data-id="basilisk" data-type="text"><i class="fas fa-comment-dots"></i> <span>What is Roko's Basilisk?</span></div>
       <div class="history-item" data-id="malinois" data-type="text"><i class="fas fa-comment-dots"></i> <span>How to train a Belgian Malinois</span></div>
       <div class="history-item" data-id="elon" data-type="image"><i class="fas fa-image"></i> <span>Elon Musk naked with...</span></div>
       <div class="history-item" data-id="koala" data-type="text"><i class="fas fa-comment-dots"></i> <span>Koala</span></div>
       <div class="history-item" data-id="film" data-type="video"><i class="fas fa-video"></i> <span>AI-generated short film</span></div>
       </div>
-    <div class="model-pills" style="margin: 18px 0 0 18px;">
-      <button class="model-pill active" data-model="m8b-uncensored">M8B</button>
-      <button class="model-pill" data-model="qwen-qwq">Qwen</button>
-      <button class="model-pill" data-model="wai">WAI</button>
-    </div>
   </aside>
   <!-- Main Area -->
   <main class="main-area" style="position: relative;">
-    <div class="main-header">
-        <div>
-        <div style="font-size: 1.25rem; font-weight: 600;">Current Conversation</div>
-        <div class="model-indicator">Model: <span id="current-model">M8B</span></div>
+    <div class="chat-area" id="chat-area" style="position:relative;">
+      <!-- Model Selection Centered (inline, not overlay) -->
+      <div id="model-select-center" style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:absolute;top:0;left:0;pointer-events:auto;">
+        <div style="font-size:1.1rem;font-weight:500;color:#fff;margin-bottom:20px;">Select Model</div>
+        <div style="display:flex;gap:16px;">
+          <button class="model-bubble" data-model="m8b-uncensored" style="background:transparent;color:#fff;border:1.5px solid #444;border-radius:999px;padding:10px 20px;font-size:0.98rem;font-weight:500;display:flex;align-items:center;gap:8px;transition:background 0.2s,border 0.2s;cursor:pointer;outline:none;">
+            <i class="fas fa-comment-dots" style="font-size:1.05rem;"></i> M8B-Uncensored
+          </button>
+          <button class="model-bubble" data-model="wai" style="background:transparent;color:#fff;border:1.5px solid #444;border-radius:999px;padding:10px 20px;font-size:0.98rem;font-weight:500;display:flex;align-items:center;gap:8px;transition:background 0.2s,border 0.2s;cursor:pointer;outline:none;">
+            <i class="fas fa-image" style="font-size:1.05rem;"></i> WAI SDXL (NSFW)
+          </button>
+          <button class="model-bubble" data-model="qwen-qwq" style="background:transparent;color:#fff;border:1.5px solid #444;border-radius:999px;padding:10px 20px;font-size:0.98rem;font-weight:500;display:flex;align-items:center;gap:8px;transition:background 0.2s,border 0.2s;cursor:pointer;outline:none;">
+            <i class="fas fa-comment-dots" style="font-size:1.05rem;"></i> Qwen QwQ 32b
+          </button>
+        </div>
       </div>
-      <div class="model-pills">
-        <button class="model-pill active" data-model="m8b-uncensored">M8B</button>
-        <button class="model-pill" data-model="qwen-qwq">Qwen</button>
-        <button class="model-pill" data-model="wai">WAI</button>
-      </div>
-    </div>
-    <div class="chat-area" id="chat-area">
       <!-- Test Conversation -->
-      <div id="test-conversation" class="chat-conversation">
+      <div id="test-conversation" class="chat-conversation" style="display:none;">
         <div class="chat-message-row user">
           <div class="chat-message-avatar">U</div>
           <div class="chat-message-content">Hello, what can you do?</div>
@@ -141,11 +193,15 @@
       </div>
       <!-- Add more conversations here as needed -->
     </div>
-    <form class="chat-input-bar" autocomplete="off">
-      <div class="chat-input-inner">
-        <textarea placeholder="Type your message..." rows="1"></textarea>
+    <form class="chat-input-bar" autocomplete="off" style="padding-bottom:10px;">
+      <div class="chat-input-inner" style="max-width:800px;min-height:36px;padding:4px 12px;">
+        <div id="chat-selected-model-short" style="background:#232323;color:#fff;border-radius:999px;padding:4px 14px;font-size:1rem;font-weight:600;display:none;align-items:center;gap:7px;margin-right:10px;">
+          <span id="current-model-icon" style="font-size:1.1rem;display:flex;align-items:center;"></span>
+          <span id="current-model-pill"></span>
+        </div>
+        <textarea placeholder="Type your message..." rows="1" style="min-height:28px;font-size:1rem;"></textarea>
         <button type="submit"><i class="fas fa-paper-plane"></i></button>
-  </div>
+      </div>
     </form>
     <!-- Model Selection Overlay (hidden by default, show with JS) -->
     <div id="model-select-overlay" class="model-select-overlay" style="display: none;">
@@ -185,19 +241,96 @@ filterPills.forEach(pill => {
     });
   });
 });
-// History item selection
+// --- REIMPLEMENTED LOGIC ---
 const chatArea = document.getElementById('chat-area');
-const testConversation = document.getElementById('test-conversation');
+const modelSelectCenter = document.getElementById('model-select-center');
+const modelBubbles = document.querySelectorAll('.model-bubble');
+const modelPill = document.getElementById('chat-selected-model-short');
+const modelPillLabel = document.getElementById('current-model-pill');
+const modelPillIcon = document.getElementById('current-model-icon');
+const newChatBtn = document.getElementById('new-chat-btn');
+let currentModel = null;
+let currentConversationId = null;
+
+function showModelSelect() {
+  modelSelectCenter.style.display = 'flex';
+  if (modelPill) modelPill.style.display = 'none';
+  // Hide all conversations
+  chatArea.querySelectorAll('.chat-conversation').forEach(e => e.style.display = 'none');
+  // Deselect all history items
+  document.querySelectorAll('.history-item').forEach(item => item.classList.remove('selected'));
+}
+function hideModelSelect() {
+  modelSelectCenter.style.display = 'none';
+}
+function showConversation(convoId) {
+  // Hide model select
+  hideModelSelect();
+  // Hide all conversations
+  chatArea.querySelectorAll('.chat-conversation').forEach(e => e.style.display = 'none');
+  // Show the selected conversation
+  const convo = document.getElementById(convoId);
+  if (convo) convo.style.display = '';
+}
+function showModelPill(model) {
+  const MODEL_MAP = {
+    'm8b-uncensored': { label: 'M8B', icon: '<i class="fas fa-comment-dots"></i>' },
+    'wai': { label: 'WAI', icon: '<i class="fas fa-image"></i>' },
+    'qwen-qwq': { label: 'Qwen', icon: '<i class="fas fa-comment-dots"></i>' },
+    'deepseek': { label: 'Deepseek', icon: '<i class="fas fa-code"></i>' }
+  };
+  if (model && MODEL_MAP[model]) {
+    modelPill.style.display = 'flex';
+    modelPillLabel.textContent = MODEL_MAP[model].label;
+    modelPillIcon.innerHTML = MODEL_MAP[model].icon;
+  } else {
+    modelPill.style.display = 'none';
+    modelPillLabel.textContent = '';
+    modelPillIcon.innerHTML = '';
+  }
+}
+function clearModelSelection() {
+  currentModel = null;
+  showModelSelect();
+  showModelPill(null);
+}
+// On page load, always show model selection
+window.addEventListener('DOMContentLoaded', () => {
+  clearModelSelection();
+});
+// Model selection bubbles
+modelBubbles.forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentModel = btn.getAttribute('data-model');
+    hideModelSelect();
+    showModelPill(currentModel);
+    // Show a new/empty conversation area (or keep it empty)
+    // Optionally, you can create a new conversation div dynamically here
+  });
+});
+// New Chat button
+if (newChatBtn) {
+  newChatBtn.addEventListener('click', () => {
+    clearModelSelection();
+  });
+}
+// History item click
 historyItems.forEach(item => {
   item.addEventListener('click', () => {
+    // Deselect all
     historyItems.forEach(i => i.classList.remove('selected'));
     item.classList.add('selected');
-    // For demo, only show test conversation
-    if (item.getAttribute('data-id') === 'test') {
-      testConversation.style.display = '';
-    } else {
-      testConversation.style.display = 'none';
-    }
+    // Show the conversation
+    const convoId = item.getAttribute('data-id') + '-conversation';
+    showConversation(convoId);
+    // For demo: set model to M8B for test, Qwen for basilisk, WAI for elon, etc.
+    let model = null;
+    if (item.getAttribute('data-id') === 'test') model = 'm8b-uncensored';
+    else if (item.getAttribute('data-id') === 'basilisk') model = 'qwen-qwq';
+    else if (item.getAttribute('data-id') === 'elon') model = 'wai';
+    else model = 'm8b-uncensored'; // fallback
+    showModelPill(model);
+    hideModelSelect();
   });
 });
 // Copy button logic
@@ -211,5 +344,49 @@ copyBtns.forEach(btn => {
     setTimeout(() => btn.classList.remove('copied'), 800);
   });
 });
+// Model indicator update
+function updateModelPill() {
+  let model = null;
+  if (window.getSelectedModel) {
+    const stored = window.getSelectedModel();
+    // Only treat as selected if not null/undefined/empty string
+    if (stored && stored !== 'null' && stored !== 'undefined' && stored !== '') {
+      model = stored;
+    }
+  }
+  const pill = document.getElementById('chat-selected-model-short');
+  const pillLabel = document.getElementById('current-model-pill');
+  const pillIcon = document.getElementById('current-model-icon');
+  if (!pill || !pillLabel || !pillIcon) return;
+  const MODEL_MAP = {
+    'm8b-uncensored': { label: 'M8B', icon: '<i class="fas fa-comment-dots"></i>' },
+    'wai': { label: 'WAI', icon: '<i class="fas fa-image"></i>' },
+    'qwen-qwq': { label: 'Qwen', icon: '<i class="fas fa-comment-dots"></i>' },
+    'deepseek': { label: 'Deepseek', icon: '<i class="fas fa-code"></i>' }
+  };
+  if (model && MODEL_MAP[model]) {
+    pill.style.display = 'flex';
+    pillLabel.textContent = MODEL_MAP[model].label;
+    pillIcon.innerHTML = MODEL_MAP[model].icon;
+  } else {
+    pill.style.display = 'none';
+    pillLabel.textContent = '';
+    pillIcon.innerHTML = '';
+  }
+}
+document.addEventListener('DOMContentLoaded', updateModelPill);
+if (window.setSelectedModel) {
+  const orig = window.setSelectedModel;
+  window.setSelectedModel = function(model) {
+    orig(model);
+    updateModelPill();
+  };
+}
+// Model selection center logic (inline, not overlay)
+function isChatEmpty() {
+  // Check if there are any visible chat messages
+  return !chatArea.querySelector('.chat-message-row');
+}
+// Hide model select if a message is sent (optional: you can also call this after sending a message)
 </script>
 {% endblock %} 
