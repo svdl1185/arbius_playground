@@ -96,6 +96,7 @@
     max-width: 1100px;
     margin: 0 auto;
     width: 100%;
+    overflow-y: auto;
   }
   .sidebar-collapsed .chat-messages-inner,
   .sidebar-collapsed .chat-input-inner {
@@ -202,7 +203,8 @@
     resize: none;
     outline: none;
     min-height: 32px;
-    max-height: 100px;
+    max-height: 200px;
+    overflow-y: auto;
   }
   .chat-input-inner button { background: #fff; color: #181818; border: none; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; margin-left: 8px; cursor: pointer; transition: background 0.2s, color 0.2s; }
   .chat-input-inner button:hover { background: #e5e5e5; color: #181818; }
@@ -225,22 +227,27 @@
   padding-right: 6px !important;
 }
 .chat-main-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
   max-width: 900px;
   margin: 0 auto;
   width: 100%;
-  display: flex;
-  flex-direction: column;
   align-items: stretch;
   position: relative;
-  min-height: 100vh;
   padding-bottom: 0; /* remove extra space for fixed input bar */
 }
 .sidebar-collapsed .chat-main-inner {
   max-width: 1200px;
 }
 .chat-messages-inner {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  max-width: 1100px;
+  margin: 0 auto;
   width: 100%;
-  /* Remove max-width here */
 }
 .chat-input-bar {
   position: sticky;
@@ -458,20 +465,36 @@
             <!-- 10+ prompt/answer pairs -->
             <div class="chat-message-row user"><div class="chat-message-content">Hi! Can you help me learn about the solar system?</div></div>
             <div class="chat-message-row assistant"><div class="chat-message-content">Absolutely! The solar system consists of the Sun and all the objects that orbit it, including eight planets, their moons, dwarf planets, asteroids, and comets.</div></div>
+            <div class="chat-message-row user"><div class="chat-message-content">What is the Sun made of?</div></div>
+            <div class="chat-message-row assistant"><div class="chat-message-content">The Sun is primarily composed of hydrogen and helium, with hydrogen making up about 74% of its mass.</div></div>
             <div class="chat-message-row user"><div class="chat-message-content">Which planet is closest to the Sun?</div></div>
             <div class="chat-message-row assistant"><div class="chat-message-content">Mercury is the closest planet to the Sun.</div></div>
+            <div class="chat-message-row user"><div class="chat-message-content">How hot does Mercury get?</div></div>
+            <div class="chat-message-row assistant"><div class="chat-message-content">Mercury's surface temperature can reach up to 430°C (800°F) during the day.</div></div>
             <div class="chat-message-row user"><div class="chat-message-content">Which one is the largest?</div></div>
             <div class="chat-message-row assistant"><div class="chat-message-content">Jupiter is the largest planet in our solar system.</div></div>
+            <div class="chat-message-row user"><div class="chat-message-content">How big is Jupiter compared to Earth?</div></div>
+            <div class="chat-message-row assistant"><div class="chat-message-content">Jupiter's diameter is about 11 times that of Earth, and it could fit over 1,300 Earths inside it.</div></div>
             <div class="chat-message-row user"><div class="chat-message-content">How many moons does Jupiter have?</div></div>
             <div class="chat-message-row assistant"><div class="chat-message-content">Jupiter has 95 known moons as of 2024.</div></div>
+            <div class="chat-message-row user"><div class="chat-message-content">Which is Jupiter's largest moon?</div></div>
+            <div class="chat-message-row assistant"><div class="chat-message-content">Ganymede is Jupiter's largest moon and is even bigger than the planet Mercury.</div></div>
             <div class="chat-message-row user"><div class="chat-message-content">What is the asteroid belt?</div></div>
             <div class="chat-message-row assistant"><div class="chat-message-content">The asteroid belt is a region between Mars and Jupiter where most of the solar system's asteroids are found.</div></div>
+            <div class="chat-message-row user"><div class="chat-message-content">Are there any famous asteroids?</div></div>
+            <div class="chat-message-row assistant"><div class="chat-message-content">Yes, some well-known asteroids include Ceres, Vesta, Pallas, and Hygiea.</div></div>
             <div class="chat-message-row user"><div class="chat-message-content">Are there any dwarf planets?</div></div>
             <div class="chat-message-row assistant"><div class="chat-message-content">Yes, there are several dwarf planets, including Pluto, Eris, Haumea, Makemake, and Ceres.</div></div>
+            <div class="chat-message-row user"><div class="chat-message-content">Where is Eris located?</div></div>
+            <div class="chat-message-row assistant"><div class="chat-message-content">Eris is located in the scattered disc, a distant region of the solar system beyond Neptune.</div></div>
             <div class="chat-message-row user"><div class="chat-message-content">Why isn't Pluto a planet anymore?</div></div>
             <div class="chat-message-row assistant"><div class="chat-message-content">In 2006, the IAU redefined the criteria for planethood, and Pluto did not meet all the requirements, so it was reclassified as a dwarf planet.</div></div>
+            <div class="chat-message-row user"><div class="chat-message-content">What are the criteria for being a planet?</div></div>
+            <div class="chat-message-row assistant"><div class="chat-message-content">A planet must orbit the Sun, be spherical due to its own gravity, and have cleared its orbit of other debris.</div></div>
             <div class="chat-message-row user"><div class="chat-message-content">What's the hottest planet?</div></div>
             <div class="chat-message-row assistant"><div class="chat-message-content">Venus is the hottest planet in our solar system due to its thick, heat-trapping atmosphere.</div></div>
+            <div class="chat-message-row user"><div class="chat-message-content">Why is Venus hotter than Mercury?</div></div>
+            <div class="chat-message-row assistant"><div class="chat-message-content">Venus is hotter than Mercury because its dense atmosphere is rich in carbon dioxide, creating a strong greenhouse effect.</div></div>
             <div class="chat-message-row user"><div class="chat-message-content">Thank you! That was very helpful.</div></div>
             <div class="chat-message-row assistant"><div class="chat-message-content">You're welcome! Let me know if you have more questions about space or anything else.</div></div>
           </div>
@@ -723,6 +746,16 @@ document.addEventListener('DOMContentLoaded', function() {
         walletDropdownMenu.style.display = 'none';
       }
     });
+  }
+  // Auto-expand chat input textarea
+  const textarea = document.querySelector('.chat-input-inner textarea');
+  if (textarea) {
+    textarea.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = (this.scrollHeight) + 'px';
+    });
+    // Optional: trigger once on load
+    textarea.dispatchEvent(new Event('input'));
   }
 });
 </script>
