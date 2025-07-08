@@ -67,27 +67,6 @@
 </head>
 <body class="bg-darkbg text-textlight font-sans min-h-screen flex flex-col">
     {% block content %}{% endblock %}
-    <!-- Footer -->
-    <footer class="bg-darkbg border-t border-border py-4 transition-all duration-300 text-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div>
-                <h5 class="text-base font-bold mb-1 text-white">Arbius</h5>
-                <p class="text-textmuted max-w-xs text-xs">Decentralized machine learning network powered by AIUS and Proof-of-Useful-Work.</p>
-            </div>
-            <div class="flex flex-col md:flex-row gap-4">
-                <div>
-                    <h6 class="font-semibold mb-1 text-white text-xs">Community</h6>
-                    <ul class="space-y-0.5">
-                        <li><a href="https://github.com/svdl1185/arbius_playground" target="_blank" class="text-textmuted hover:text-white flex items-center gap-2 text-xs"><i class="fab fa-github"></i> Github</a></li>
-                        <li><a href="https://x.com/arbius_ai" target="_blank" class="text-textmuted hover:text-white flex items-center gap-2 text-xs"><i class="fab fa-twitter"></i> Twitter</a></li>
-                        <li><a href="https://t.me/arbius_ai" target="_blank" class="text-textmuted hover:text-white flex items-center gap-2 text-xs"><i class="fab fa-telegram"></i> Telegram</a></li>
-                        <li><a href="https://discord.gg/ztRRajx8" target="_blank" class="text-textmuted hover:text-white flex items-center gap-2 text-xs"><i class="fab fa-discord"></i> Discord</a></li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-        <div class="text-center text-textmuted mt-4 text-xs">&copy; 2025 Arbius. All rights reserved.</div>
-    </footer>
     {% block extra_js %}{% endblock %}
     <!-- MetaMask Integration -->
     <script src="{% static 'js/metamask.js' %}"></script>

@@ -181,12 +181,6 @@
       </a>
     </div>
     
-    <!-- Navigation Links in Center -->
-    <div class="hidden md:flex items-center gap-6">
-      <a href="{% url 'playground' %}" class="nav-link {% if request.resolver_match.url_name == 'playground' %}nav-link-active{% endif %}">Playground</a>
-      <a href="https://snorlax.app/gallery/" target="_blank" class="nav-link">Gallery</a>
-    </div>
-    
     <!-- Wallet/Actions on Right -->
     <div class="flex items-center gap-3">
       <!-- Desktop Wallet Section -->
@@ -327,7 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
   ];
 
   const questionsBg = document.getElementById('questions-bg');
-  const MAX_QUESTIONS = 14;
+  const MAX_QUESTIONS = 20;
   let activeQuestions = [];
 
   function createFloatingQuestion() {
@@ -361,7 +355,7 @@ document.addEventListener('DOMContentLoaded', function() {
     question.style.left = left + '%';
     // --- Avoid vertical overlap with last 5 questions ---
     // Get last 5 active questions' top positions (in %)
-    const lastTops = activeQuestions.slice(-5).map(q => {
+    const lastTops = activeQuestions.slice(-18).map(q => {
       const topStr = q.style.top || '0%';
       return parseFloat(topStr.replace('%',''));
     });

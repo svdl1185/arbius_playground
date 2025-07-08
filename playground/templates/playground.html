@@ -5,434 +5,179 @@
 
 {% block extra_css %}
 <style>
-  .chat-message {
-    animation: fadeIn 0.3s ease-in-out;
-  }
-  
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  
-  .model-card {
-    transition: all 0.2s ease;
-  }
-  
-  .model-card:hover {
-    transform: translateY(-2px);
-  }
-  
-  .model-card.selected {
-    border-color: white;
-    background: rgba(255, 255, 255, 0.1);
-  }
-  
-  .chat-container {
-    height: calc(100vh - 200px);
-  }
-  
-  .message-input {
-    resize: none;
-    min-height: 44px;
-    max-height: 120px;
-  }
-  
-  .typing-indicator {
-    display: none;
-  }
-  
-  .typing-indicator.active {
-    display: flex;
-  }
-  
-  .history-filter-pill {
-    @apply bg-transparent p-0 rounded-full transition focus:outline-none;
-    box-shadow: none;
-  }
-  .history-filter-pill .filter-circle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    background: rgba(255,255,255,0.12);
-    border-radius: 50%;
-    color: white;
-    font-size: 0.95rem;
-    transition: background 0.2s, box-shadow 0.2s, color 0.2s;
-    margin: 0 auto;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.10);
-  }
-  .history-filter-pill.active .filter-circle {
-    background: white;
-    color: #111;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
-  }
-  .history-filter-pill:hover .filter-circle {
-    background: rgba(255,255,255,0.22);
-    color: #fff;
-  }
-  .history-filter-pill span.filter-circle {
-    font-size: 1.1rem;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-  }
-  .history-filter-pill {
-    min-width: 32px;
-    min-height: 32px;
-    padding: 0;
-    margin: 0 2px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    background: none;
-    box-shadow: none;
-  }
-  .history-item {
-    @apply flex items-center gap-2 px-3 py-2 rounded-lg text-textmuted cursor-pointer hover:bg-white/10 hover:text-white transition text-base;
-  }
-  .history-item.selected {
-    @apply bg-white/10 text-white;
-  }
-  .model-pill {
-    @apply px-4 py-1 rounded-full bg-white/10 text-white text-xs font-semibold transition hover:bg-white/20 focus:outline-none;
-  }
-  .model-pill.active {
-    @apply bg-white text-black shadow;
-  }
-  html, body, .min-h-screen {
-    height: 100vh !important;
-    min-height: 100vh !important;
-    overflow: hidden !important;
-  }
-  #__next, .flex.flex-col.bg-black.min-h-screen {
-    height: 100vh !important;
-    min-height: 100vh !important;
-    overflow: hidden !important;
-  }
-  .flex-1.flex.flex-col.min-h-0.md\:ml-72 {
-    height: 100vh !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-  }
-  #chat-messages {
-    overflow-y: auto !important;
-    max-height: calc(100vh - 180px) !important;
-  }
-  .sidebar {
-    transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s, box-shadow 0.2s;
-    will-change: width;
+  html, body {
+    height: 100%; min-height: 100%; background: #0a0a0a; color: #fff; font-family: 'Inter', sans-serif;
     overflow: hidden;
   }
-  .sidebar.collapsed {
-    width: 56px !important;
-    min-width: 56px !important;
-    max-width: 56px !important;
+  .navbar {
+    width: 100%; background: #0a0a0a; border-bottom: 1px solid #222; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; height: 64px; min-height: 64px;
   }
-  .sidebar .sidebar-content {
-    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    opacity: 1;
-    visibility: visible;
-  }
-  .sidebar.collapsed .sidebar-content {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-  }
-  #main-content.expanded {
-    margin-left: 56px !important;
-  }
-  @media (min-width: 768px) {
-    #main-content {
-      margin-left: 18rem; /* 72px * 4 = 288px */
-    }
-    #main-content.expanded {
-      margin-left: 56px !important;
-    }
-  }
-  #sticky-chat-input {
-    left: 0 !important;
-    margin-left: 288px !important;
-    width: calc(100vw - 288px) !important;
-    max-width: none !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    border: none !important;
-    bottom: 24px !important;
-    padding: 0;
-    z-index: 30;
-    transform: none !important;
-    transition: left 0.18s ease-in-out, width 0.18s ease-in-out, margin-left 0.18s ease-in-out, transform 0.18s ease-in-out;
-  }
-  #chat-form {
-    width: 100%;
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 0;
-  }
-  body.sidebar-collapsed #sticky-chat-input {
-    left: 50% !important;
-    margin-left: 0 !important;
-    width: 100vw !important;
-    max-width: 900px !important;
-    transform: translateX(-50%) !important;
-  }
-  @media (max-width: 1024px) {
-    #sticky-chat-input, #chat-form {
-      max-width: 98vw !important;
-      left: 50% !important;
-      transform: translateX(-50%) !important;
-      width: 100vw !important;
-      margin-left: 0 !important;
-    }
-    body.sidebar-collapsed #sticky-chat-input {
-      left: 50% !important;
-      width: 100vw !important;
-      transform: translateX(-50%) !important;
-      margin-left: 0 !important;
-    }
-  }
-  .sidebar-collapsed #sticky-chat-input {
-    max-width: 900px !important;
-  }
-  /* New style for prominent buttons */
-  .btn-outline-white {
-    background: black !important;
-    color: white !important;
-    border: 1.5px solid white !important;
-    box-shadow: none !important;
-    transition: background 0.2s, color 0.2s, border 0.2s;
-  }
-  .btn-outline-white:hover, .btn-outline-white:focus {
-    background: #181818 !important;
-    color: #fff !important;
-    border-color: #fff !important;
-  }
+  .navbar-logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.6rem; color: #fff; text-decoration: none; }
+  .navbar-wallet { display: flex; align-items: center; gap: 10px; }
+  .wallet-btn-outline { background: rgba(0,0,0,0.55) !important; color: white !important; border: 1.5px solid white !important; box-shadow: none !important; transition: background 0.2s, color 0.2s, border 0.2s; backdrop-filter: blur(2px); padding: 8px 18px; border-radius: 12px; font-weight: 600; font-size: 1.05rem; }
+  .wallet-btn-outline:hover { background: rgba(0,0,0,0.75) !important; color: #fff !important; }
+  .playground-root { display: flex; height: calc(100vh - 64px); min-height: 0; background: #0a0a0a; }
+  .sidebar { width: 260px; background: #181818; border-right: 1px solid #222; display: flex; flex-direction: column; transition: width 0.3s; min-width: 56px; position: relative; }
+  .sidebar.collapsed { width: 56px !important; min-width: 56px !important; }
+  .sidebar-header { padding: 18px 18px 0 18px; display: flex; flex-direction: column; gap: 12px; }
+  .sidebar .history-label { font-size: 0.8rem; color: #888; letter-spacing: 0.1em; margin: 18px 0 8px 18px; text-transform: uppercase; font-weight: 600; }
+  .sidebar .filter-pills { display: flex; gap: 8px; margin: 0 0 10px 18px; }
+  .filter-pill { background: #232323; color: #fff; border: none; border-radius: 999px; padding: 4px 12px; font-size: 0.95rem; cursor: pointer; transition: background 0.2s, color 0.2s; }
+  .filter-pill.active, .filter-pill:hover { background: #fff; color: #181818; }
+  .sidebar .history-list { flex: 1; overflow-y: auto; padding: 0 0 18px 0; margin: 0; }
+  .history-item { display: flex; align-items: center; gap: 10px; padding: 9px 18px; font-size: 1rem; color: #ccc; cursor: pointer; border: none; background: none; width: 100%; transition: background 0.2s, color 0.2s; border-radius: 8px; }
+  .history-item.selected, .history-item:hover { background: #232323; color: #fff; }
+  .sidebar-toggle-btn { position: absolute; top: 80px; right: -18px; z-index: 60; background: #232323; color: #fff; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.10); transition: background 0.2s; }
+  .sidebar-toggle-btn:hover { background: #333; }
+  .sidebar.collapsed .sidebar-header, .sidebar.collapsed .history-label, .sidebar.collapsed .filter-pills, .sidebar.collapsed .model-pills { display: none !important; }
+  .sidebar.collapsed .history-item { justify-content: center; padding-left: 0; padding-right: 0; }
+  .sidebar.collapsed .history-item span { display: none; }
+  .sidebar.collapsed .history-item i { margin: 0; }
+  .main-area { flex: 1; display: flex; flex-direction: column; height: 100%; min-width: 0; background: #0a0a0a; }
+  .main-header { display: flex; align-items: center; justify-content: space-between; padding: 28px 36px 12px 36px; border-bottom: 1px solid #222; }
+  .main-header .model-indicator { font-size: 0.95rem; color: #aaa; margin-top: 2px; }
+  .chat-area { flex: 1; overflow-y: auto; padding: 28px 0 0 0; display: flex; flex-direction: column; align-items: stretch; min-height: 0; }
+  .chat-message-row { display: flex; align-items: flex-end; gap: 12px; margin: 0 0 18px 0; padding: 0 36px; position: relative; }
+  .chat-message-row.user { flex-direction: row-reverse; justify-content: flex-end; }
+  .chat-message-row.assistant { flex-direction: row; justify-content: flex-start; }
+  .chat-message-avatar { width: 32px; height: 32px; border-radius: 50%; background: #fff; color: #181818; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1rem; }
+  .chat-message-content { background: #232a3a; color: #fff; border-radius: 14px; padding: 10px 16px; font-size: 1.02rem; max-width: 520px; word-break: break-word; }
+  .chat-message-row.user .chat-message-avatar { background: #fff; color: #181818; }
+  .chat-message-row.assistant .chat-message-avatar { background: #3b82f6; color: #fff; }
+  .chat-message-row.user .chat-message-content { background: #232323; color: #fff; }
+  .chat-message-row.assistant .chat-message-content { background: #232a3a; color: #fff; }
+  .chat-message-actions { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+  .chat-message-actions button { background: none; border: none; color: #aaa; cursor: pointer; font-size: 1.1rem; padding: 2px 6px; border-radius: 6px; transition: background 0.2s, color 0.2s; }
+  .chat-message-actions button:hover { background: #232323; color: #fff; }
+  .chat-input-bar { width: 100%; padding: 0 0 18px 0; background: none; border: none; display: flex; align-items: center; justify-content: center; }
+  .chat-input-inner { display: flex; align-items: center; width: 100%; max-width: 600px; background: #181818; border-radius: 999px; border: 1.5px solid #fff; padding: 8px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.10); }
+  .chat-input-inner textarea { flex: 1; background: transparent; border: none; color: #fff; font-size: 1.05rem; padding: 8px 0; resize: none; outline: none; min-height: 32px; max-height: 100px; }
+  .chat-input-inner button { background: #fff; color: #181818; border: none; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; margin-left: 8px; cursor: pointer; transition: background 0.2s, color 0.2s; }
+  .chat-input-inner button:hover { background: #e5e5e5; color: #181818; }
+  .model-select-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10,10,10,0.98); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .model-select-title { font-size: 2rem; font-weight: 600; margin-bottom: 32px; color: #fff; }
+  .model-select-pills { display: flex; gap: 18px; margin-bottom: 18px; }
+  .model-select-pill { display: flex; align-items: center; gap: 8px; padding: 14px 28px; border-radius: 999px; background: #232323; color: #fff; font-size: 1.1rem; font-weight: 500; border: none; cursor: pointer; transition: background 0.2s, color 0.2s; }
+  .model-select-pill.selected, .model-select-pill:hover { background: #fff; color: #181818; }
+  .model-select-pill.disabled { opacity: 0.5; cursor: not-allowed; }
+  @media (max-width: 900px) { .sidebar { width: 56px !important; min-width: 56px !important; } .sidebar:not(.collapsed) { width: 220px !important; } .main-header, .chat-message-row { padding-left: 16px; padding-right: 16px; } }
+  @media (max-width: 600px) { .main-header, .chat-message-row { padding-left: 4px; padding-right: 4px; } .chat-input-inner { max-width: 98vw; } }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Navigation -->
-<nav class="nav-glass w-full fixed top-0 z-30 transition-all duration-300">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16 relative">
-    <!-- Logo and Name on Left -->
-    <div class="flex items-center gap-3" style="margin-left: -36px;">
-      <a href="{% url 'home' %}" class="flex items-center gap-2 font-bold text-2xl text-white">
+<!-- Navbar -->
+<nav class="navbar">
+  <a href="/" class="navbar-logo">
         <img src="{% static 'arbius.ef337b97.svg' %}" alt="Arbius Logo" class="inline-block w-7 h-7" />
         Arbius
       </a>
-    </div>
-    <!-- Wallet/Actions all the way on Right -->
-    <div class="flex items-center gap-3 ml-auto">
-      <!-- Desktop Wallet Section -->
-      <div class="hidden md:flex items-center gap-3">
-        <!-- Connected State -->
-        <div id="wallet-connected-container" class="flex items-center gap-2 bg-transparent border-none shadow-none rounded-full px-2 py-1 transition-all duration-300 text-xs font-mono" style="display: none; min-width:0;">
-          <span id="wallet-address" class="text-white cursor-pointer hover:underline px-2" style="min-width:0;"></span>
-          <span id="aius-balance" class="text-white px-2 font-semibold" style="display:none;"></span>
-          <button id="disconnect-wallet-btn" class="ml-1 w-7 h-7 flex items-center justify-center rounded-full border-none bg-transparent text-white hover:bg-white/10 transition-all duration-200" title="Disconnect">
-            <i class="fas fa-sign-out-alt"></i>
-          </button>
-        </div>
-        <!-- Connect Button -->
-        <button id="connect-wallet-btn"
-          class="btn-outline-white px-4 py-2.5 rounded-xl font-semibold transition flex items-center gap-2" style="">
-          <i class="fas fa-wallet"></i> Connect Wallet
-        </button>
-      </div>
-      <!-- Mobile Wallet Section -->
-      <div class="md:hidden flex items-center gap-2">
-        <button id="connect-wallet-btn-mobile"
-          class="btn-outline-white px-4 py-2.5 rounded-xl font-semibold transition flex items-center gap-2" style="">
-          <i class="fas fa-wallet"></i> Connect
-        </button>
-      </div>
-    </div>
+  <div class="navbar-wallet">
+    <button class="wallet-btn-outline"><i class="fas fa-wallet"></i> Connect Wallet</button>
   </div>
 </nav>
-
-<div class="flex flex-col bg-black min-h-screen pt-16">
-  <!-- Slide-out Sidebar Trigger -->
-  <button id="sidebar-toggle" class="fixed top-20 left-4 z-40 bg-white/10 text-white rounded-full p-2 shadow hover:bg-white/20 md:hidden">
-    <i class="fas fa-bars"></i>
-  </button>
-  <!-- Collapsible Sidebar -->
-  <aside id="sidebar" class="sidebar fixed top-0 left-0 h-screen w-72 bg-cardbg border-r border-border z-50 md:relative md:w-72 md:h-screen md:border-r md:shadow-lg md:bg-cardbg md:flex md:flex-col md:static">
-    <div class="sidebar-content flex flex-col gap-4 p-6 h-full">
-      <!-- New Chat Button -->
-      <button id="new-chat-btn" class="w-full btn-outline-white font-semibold py-2 rounded-xl flex items-center justify-center gap-2 transition text-base" style="">
-        <i class="fas fa-plus"></i> New Chat
-      </button>
-      <!-- History Label -->
-      <div class="text-xs font-semibold text-textmuted tracking-widest uppercase pl-1 pt-2">History</div>
-      <!-- Filter Pills -->
-      <div class="flex gap-3 mb-2 justify-center w-full">
-        <button class="history-filter-pill active" data-type="all"><span class="filter-circle">All</span></button>
-        <button class="history-filter-pill" data-type="text"><span class="filter-circle"><i class="fas fa-comment-dots"></i></span></button>
-        <button class="history-filter-pill" data-type="image"><span class="filter-circle"><i class="fas fa-image"></i></span></button>
-        <button class="history-filter-pill" data-type="video"><span class="filter-circle"><i class="fas fa-video"></i></span></button>
+<div class="playground-root">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle-btn" id="sidebar-toggle-btn"><i class="fas fa-angle-left"></i></button>
+    <div class="sidebar-header"></div>
+    <div class="history-label">History</div>
+    <div class="filter-pills">
+      <button class="filter-pill active" data-type="all">All</button>
+      <button class="filter-pill" data-type="text"><i class="fas fa-comment-dots"></i></button>
+      <button class="filter-pill" data-type="image"><i class="fas fa-image"></i></button>
+      <button class="filter-pill" data-type="video"><i class="fas fa-video"></i></button>
       </div>
-      <hr class="border-border my-2" />
-      <!-- History List -->
-      <div class="flex-1 overflow-y-auto min-h-0 space-y-1" id="chat-history">
-        <!-- Placeholder conversations -->
-        <div class="history-item" data-type="text"><i class="fas fa-comment-dots"></i> <span>What is Roko's Basilisk?</span></div>
-        <div class="history-item" data-type="text"><i class="fas fa-comment-dots"></i> <span>How to train a Belgian Malinois</span></div>
-        <div class="history-item" data-type="image"><i class="fas fa-image"></i> <span>Elon Musk naked with...</span></div>
-        <div class="history-item" data-type="text"><i class="fas fa-comment-dots"></i> <span>Koala</span></div>
-        <div class="history-item" data-type="video"><i class="fas fa-video"></i> <span>AI-generated short film</span></div>
+    <div class="history-list" id="history-list">
+      <div class="history-item selected" data-id="test" data-type="text"><i class="fas fa-comment-dots"></i> <span>Test Conversation</span></div>
+      <div class="history-item" data-id="basilisk" data-type="text"><i class="fas fa-comment-dots"></i> <span>What is Roko's Basilisk?</span></div>
+      <div class="history-item" data-id="malinois" data-type="text"><i class="fas fa-comment-dots"></i> <span>How to train a Belgian Malinois</span></div>
+      <div class="history-item" data-id="elon" data-type="image"><i class="fas fa-image"></i> <span>Elon Musk naked with...</span></div>
+      <div class="history-item" data-id="koala" data-type="text"><i class="fas fa-comment-dots"></i> <span>Koala</span></div>
+      <div class="history-item" data-id="film" data-type="video"><i class="fas fa-video"></i> <span>AI-generated short film</span></div>
       </div>
+    <div class="model-pills" style="margin: 18px 0 0 18px;">
+      <button class="model-pill active" data-model="m8b-uncensored">M8B</button>
+      <button class="model-pill" data-model="qwen-qwq">Qwen</button>
+      <button class="model-pill" data-model="wai">WAI</button>
     </div>
   </aside>
-  <!-- Sidebar Collapse Button (outside sidebar, vertically centered, always visible) -->
-  <button id="sidebar-collapse-btn" class="fixed z-50 left-0 top-1/2 -translate-y-1/2 bg-white text-black border border-border shadow-lg rounded-full p-2 transition hover:bg-gray-200" style="transform: translate(-50%, -50%); width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-    <i id="sidebar-collapse-icon" class="fas fa-angle-left fa-lg"></i>
-  </button>
-  <!-- Overlay for mobile sidebar -->
-  <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 hidden md:hidden"></div>
   <!-- Main Area -->
-  <div id="main-content" class="flex-1 flex flex-col min-h-0 md:ml-72 transition-all duration-300">
-    <!-- Conversation Header -->
-    <div class="flex items-center justify-between px-8 pt-8 pb-4">
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 bg-white rounded-xl flex items-center justify-center">
-          <i class="fas fa-brain text-black"></i>
-        </div>
+  <main class="main-area" style="position: relative;">
+    <div class="main-header">
         <div>
-          <h2 class="text-lg font-semibold text-white">Current Conversation</h2>
-          <p class="text-textmuted text-xs">Model: <span id="current-model">M8B</span></p>
-        </div>
+        <div style="font-size: 1.25rem; font-weight: 600;">Current Conversation</div>
+        <div class="model-indicator">Model: <span id="current-model">M8B</span></div>
       </div>
-      <!-- Model Switcher Pills -->
-      <div class="flex gap-2">
+      <div class="model-pills">
         <button class="model-pill active" data-model="m8b-uncensored">M8B</button>
         <button class="model-pill" data-model="qwen-qwq">Qwen</button>
-        <button class="model-pill" data-model="stable-diffusion">SD</button>
-        <button class="model-pill" data-model="dall-e">DALL-E</button>
         <button class="model-pill" data-model="wai">WAI</button>
       </div>
     </div>
-    <!-- Chat Area -->
-    <div class="flex-1 flex flex-col min-h-0" style="background: #0a0a0a;">
-      <div class="flex-1 overflow-y-auto min-h-0 px-0 pt-12 pb-0" id="chat-messages">
-        <!-- Placeholder for chat messages -->
-        <div id="empty-chat-state" class="flex flex-col justify-center h-full w-full">
-          <div class="flex flex-col gap-6 w-full h-full">
-            <!-- Model Selector Pill -->
-            <div class="relative w-full flex justify-start px-8 pt-8">
-              <button id="model-pill" class="bg-white/10 text-white px-6 py-3 rounded-full font-semibold text-lg shadow hover:bg-white/20 transition flex items-center gap-2" onclick="toggleModelDropdown()">
-                <span id="selected-model">M8B</span>
-                <i class="fas fa-chevron-down"></i>
-              </button>
-              <div id="model-dropdown" class="absolute top-14 left-8 bg-cardbg border border-border rounded-xl shadow-lg w-64 z-50 hidden flex-col">
-                <button class="model-dropdown-item px-6 py-3 text-left text-white hover:bg-white/10 w-full" data-model="m8b-uncensored">M8B</button>
-                <button class="model-dropdown-item px-6 py-3 text-left text-white hover:bg-white/10 w-full" data-model="qwen-qwq">Qwen</button>
-                <button class="model-dropdown-item px-6 py-3 text-left text-white hover:bg-white/10 w-full" data-model="stable-diffusion">SD</button>
-                <button class="model-dropdown-item px-6 py-3 text-left text-white hover:bg-white/10 w-full" data-model="dall-e">DALL-E</button>
-                <button class="model-dropdown-item px-6 py-3 text-left text-white hover:bg-white/10 w-full" data-model="wai">WAI</button>
+    <div class="chat-area" id="chat-area">
+      <!-- Test Conversation -->
+      <div id="test-conversation" class="chat-conversation">
+        <div class="chat-message-row user">
+          <div class="chat-message-avatar">U</div>
+          <div class="chat-message-content">Hello, what can you do?</div>
+          <div class="chat-message-actions"><button class="copy-btn" title="Copy"><i class="fas fa-copy"></i></button></div>
               </div>
+        <div class="chat-message-row assistant">
+          <div class="chat-message-avatar">A</div>
+          <div class="chat-message-content">Hi! I can answer questions, generate images, and more. Try asking me anything!</div>
+          <div class="chat-message-actions"><button class="copy-btn" title="Copy"><i class="fas fa-copy"></i></button></div>
             </div>
-          </div>
+        <div class="chat-message-row user">
+          <div class="chat-message-avatar">U</div>
+          <div class="chat-message-content">Draw a cat surfing a wave.</div>
+          <div class="chat-message-actions"><button class="copy-btn" title="Copy"><i class="fas fa-copy"></i></button></div>
         </div>
-        <div id="chat-messages-list" class="hidden">
-          <!-- Chat messages will appear here when a conversation is selected -->
+        <div class="chat-message-row assistant">
+          <div class="chat-message-avatar">A</div>
+          <div class="chat-message-content">Here's an image of a cat surfing a wave! 🏄‍⬛🌊</div>
+          <div class="chat-message-actions"><button class="copy-btn" title="Copy"><i class="fas fa-copy"></i></button></div>
         </div>
       </div>
+      <!-- Add more conversations here as needed -->
     </div>
+    <form class="chat-input-bar" autocomplete="off">
+      <div class="chat-input-inner">
+        <textarea placeholder="Type your message..." rows="1"></textarea>
+        <button type="submit"><i class="fas fa-paper-plane"></i></button>
   </div>
+    </form>
+    <!-- Model Selection Overlay (hidden by default, show with JS) -->
+    <div id="model-select-overlay" class="model-select-overlay" style="display: none;">
+      <div class="model-select-title">Choose your preferred model</div>
+      <div class="model-select-pills">
+        <button class="model-select-pill" data-model="m8b-uncensored">📝 M8B-Uncensored</button>
+        <button class="model-select-pill" data-model="qwen-qwq-32b">📝 Qwen QwQ 32b</button>
+        <button class="model-select-pill" data-model="wai-sdxl">🖼️ WAI SDXL (NSFW)</button>
+        <button class="model-select-pill disabled" disabled>⏳ More coming soon...</button>
 </div>
-<!-- Sticky Chat Input (always visible at the bottom) -->
-<div id="sticky-chat-input" class="fixed bottom-6 z-30 transition-all duration-300" style="left: 0; margin-left: 288px; width: calc(100vw - 288px); max-width: none; transform: none;">
-  <form id="chat-form" class="w-full max-w-3xl mx-auto flex items-center justify-center" autocomplete="off" style="background: none; box-shadow: none; max-width: 900px;">
-    <div class="flex w-full items-center bg-black/80 border border-white rounded-full pl-4 pr-1 py-2 shadow-lg backdrop-blur-md relative" style="box-shadow: 0 6px 32px 0 rgba(0,0,0,0.18); border: 1.5px solid white;">
-      <!-- Model Selector Icon/Button -->
-      <button id="chat-model-selector" type="button" class="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition text-white mr-2" style="position: relative;">
-        <i class="fas fa-robot"></i>
-        <span id="chat-selected-model-short" class="ml-1 text-xs font-bold">M8B</span>
-        <i class="fas fa-chevron-down ml-1 text-xs"></i>
-      </button>
-      <!-- Model Dropdown (hidden by default) -->
-      <div id="chat-model-dropdown" class="absolute left-0 bottom-14 bg-cardbg border border-border rounded-xl shadow-lg w-64 z-50 hidden flex-col">
-        <button class="model-dropdown-item px-6 py-3 text-left text-white hover:bg-white/10 w-full flex items-center gap-2" data-model="m8b-uncensored"><i class="fas fa-brain"></i> M8B-Uncensored</button>
-        <button class="model-dropdown-item px-6 py-3 text-left text-white hover:bg-white/10 w-full flex items-center gap-2" data-model="wai"><i class="fas fa-image"></i> WAI SDXL (NSFW)</button>
-        <button class="model-dropdown-item px-6 py-3 text-left text-white hover:bg-white/10 w-full flex items-center gap-2" data-model="qwen-qwq"><i class="fas fa-star"></i> Qwen QwQ 32b</button>
-        <button class="model-dropdown-item px-6 py-3 text-left text-gray-400 w-full flex items-center gap-2 cursor-not-allowed" data-model="deepseek" disabled><i class="fas fa-code"></i> Deepseek-coder-v2</button>
-      </div>
-      <textarea 
-        id="message-input" 
-        placeholder="Type your message..." 
-        class="flex-1 bg-transparent text-white rounded-full px-2 py-2 focus:outline-none focus:ring-2 focus:ring-white/50 resize-none border-none text-base transition-all duration-200"
-        rows="1"
-        style="min-height: 44px; max-height: 120px; box-shadow: none; background: transparent;"
-      ></textarea>
-      <button id="send-task-btn" type="submit" class="ml-2 mr-1 bg-white text-black font-semibold w-11 h-11 rounded-full shadow hover:scale-105 transition flex items-center justify-center text-lg p-0 border-none" style="box-shadow: 0 2px 8px rgba(0,0,0,0.10);">
-        <i class="fas fa-paper-plane"></i>
-      </button>
     </div>
-  </form>
+  </main>
 </div>
-
 <script>
-// Sidebar toggle functionality
-const sidebarToggle = document.getElementById('sidebar-toggle');
+// Sidebar collapse logic
 const sidebar = document.getElementById('sidebar');
-const sidebarOverlay = document.getElementById('sidebar-overlay');
-
-sidebarToggle.addEventListener('click', () => {
-  sidebar.classList.toggle('-translate-x-full');
-  sidebarOverlay.classList.toggle('hidden');
+const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
+sidebarToggleBtn.addEventListener('click', () => {
+  sidebar.classList.toggle('collapsed');
+  sidebarToggleBtn.querySelector('i').classList.toggle('fa-angle-left');
+  sidebarToggleBtn.querySelector('i').classList.toggle('fa-angle-right');
 });
-
-sidebarOverlay.addEventListener('click', () => {
-  sidebar.classList.add('-translate-x-full');
-  sidebarOverlay.classList.add('hidden');
-});
-
-// Model dropdown functionality
-function toggleModelDropdown() {
-  const dropdown = document.getElementById('model-dropdown');
-  dropdown.classList.toggle('hidden');
-}
-
-// Close dropdown when clicking outside
-document.addEventListener('click', (e) => {
-  const dropdown = document.getElementById('model-dropdown');
-  const modelPill = document.getElementById('model-pill');
-  
-  if (!dropdown.contains(e.target) && !modelPill.contains(e.target)) {
-    dropdown.classList.add('hidden');
-  }
-});
-
-// Model selection
-document.querySelectorAll('.model-dropdown-item').forEach(item => {
-  item.addEventListener('click', () => {
-    const model = item.getAttribute('data-model');
-    const modelName = item.textContent;
-    
-    document.getElementById('selected-model').textContent = modelName;
-    document.getElementById('current-model').textContent = modelName;
-    
-    // Update active state on model pills
-    document.querySelectorAll('.model-pill').forEach(pill => {
-      pill.classList.remove('active');
-    });
-    document.querySelector(`[data-model="${model}"]`).classList.add('active');
-    
-    document.getElementById('model-dropdown').classList.add('hidden');
-  });
-});
-
-// History filter functionality
-document.querySelectorAll('.history-filter-pill').forEach(pill => {
+// History filter logic
+const filterPills = document.querySelectorAll('.filter-pill');
+const historyItems = document.querySelectorAll('.history-item');
+filterPills.forEach(pill => {
   pill.addEventListener('click', () => {
-    document.querySelectorAll('.history-filter-pill').forEach(p => p.classList.remove('active'));
+    filterPills.forEach(p => p.classList.remove('active'));
     pill.classList.add('active');
-    const filterType = pill.getAttribute('data-type');
-    document.querySelectorAll('.history-item').forEach(item => {
-      if (filterType === 'all' || item.getAttribute('data-type') === filterType) {
+    const type = pill.getAttribute('data-type');
+    historyItems.forEach(item => {
+      if (type === 'all' || item.getAttribute('data-type') === type) {
         item.style.display = '';
       } else {
         item.style.display = 'none';
@@ -440,103 +185,30 @@ document.querySelectorAll('.history-filter-pill').forEach(pill => {
     });
   });
 });
-
-// New chat functionality
-document.getElementById('new-chat-btn').addEventListener('click', () => {
-  document.getElementById('empty-chat-state').classList.remove('hidden');
-  document.getElementById('chat-messages-list').classList.add('hidden');
-});
-
 // History item selection
-document.querySelectorAll('.history-item').forEach(item => {
+const chatArea = document.getElementById('chat-area');
+const testConversation = document.getElementById('test-conversation');
+historyItems.forEach(item => {
   item.addEventListener('click', () => {
-    document.querySelectorAll('.history-item').forEach(i => i.classList.remove('selected'));
+    historyItems.forEach(i => i.classList.remove('selected'));
     item.classList.add('selected');
-    
-    document.getElementById('empty-chat-state').classList.add('hidden');
-    document.getElementById('chat-messages-list').classList.remove('hidden');
+    // For demo, only show test conversation
+    if (item.getAttribute('data-id') === 'test') {
+      testConversation.style.display = '';
+    } else {
+      testConversation.style.display = 'none';
+    }
   });
 });
-
-// Auto-resize textarea
-function autoResize(textarea) {
-  textarea.style.height = 'auto';
-  textarea.style.height = textarea.scrollHeight + 'px';
-}
-
-document.getElementById('message-input').addEventListener('input', function() {
-  autoResize(this);
-});
-
-// Sidebar collapse functionality
-const sidebarCollapseBtn = document.getElementById('sidebar-collapse-btn');
-const sidebarEl = document.getElementById('sidebar');
-const mainContent = document.getElementById('main-content');
-const collapseIcon = document.getElementById('sidebar-collapse-icon');
-const stickyChatInput = document.getElementById('sticky-chat-input');
-
-function updateCollapseBtnPosition() {
-  if (sidebarEl.classList.contains('collapsed')) {
-    sidebarCollapseBtn.style.left = '56px';
-    collapseIcon.classList.remove('fa-angle-left');
-    collapseIcon.classList.add('fa-angle-right');
-    stickyChatInput.classList.add('sidebar-collapsed');
-    document.body.classList.add('sidebar-collapsed');
-  } else {
-    sidebarCollapseBtn.style.left = '288px';
-    collapseIcon.classList.remove('fa-angle-right');
-    collapseIcon.classList.add('fa-angle-left');
-    stickyChatInput.classList.remove('sidebar-collapsed');
-    document.body.classList.remove('sidebar-collapsed');
-  }
-}
-
-sidebarCollapseBtn.addEventListener('click', () => {
-  sidebarEl.classList.toggle('collapsed');
-  mainContent.classList.toggle('expanded');
-  updateCollapseBtnPosition();
-});
-
-// Initial position
-updateCollapseBtnPosition();
-window.addEventListener('resize', updateCollapseBtnPosition);
-
-// Model selector for chat input
-const chatModelSelector = document.getElementById('chat-model-selector');
-const chatModelDropdown = document.getElementById('chat-model-dropdown');
-const chatSelectedModelShort = document.getElementById('chat-selected-model-short');
-
-chatModelSelector.addEventListener('click', (e) => {
-  e.stopPropagation();
-  chatModelDropdown.classList.toggle('hidden');
-});
-
-// Hide dropdown when clicking outside
-window.addEventListener('click', (e) => {
-  if (!chatModelDropdown.contains(e.target) && !chatModelSelector.contains(e.target)) {
-    chatModelDropdown.classList.add('hidden');
-  }
-});
-
-// Model selection logic for chat input
-chatModelDropdown.querySelectorAll('.model-dropdown-item').forEach(item => {
-  item.addEventListener('click', () => {
-    if (item.hasAttribute('disabled')) return;
-    const model = item.getAttribute('data-model');
-    let shortName = 'M8B';
-    if (model === 'm8b-uncensored') shortName = 'M8B';
-    else if (model === 'wai') shortName = 'WAI';
-    else if (model === 'qwen-qwq') shortName = 'Qwen';
-    else if (model === 'deepseek') shortName = 'Deepseek';
-    chatSelectedModelShort.textContent = shortName;
-    window.setSelectedModel(model);
-    chatModelDropdown.classList.add('hidden');
-    // Also update the main header model name
-    const currentModel = document.getElementById('current-model');
-    if (currentModel) currentModel.textContent = shortName;
-    // Also update the pill in the empty chat state if present
-    const selectedModel = document.getElementById('selected-model');
-    if (selectedModel) selectedModel.textContent = shortName;
+// Copy button logic
+const copyBtns = document.querySelectorAll('.copy-btn');
+copyBtns.forEach(btn => {
+  btn.addEventListener('click', function(e) {
+    e.preventDefault();
+    const content = btn.parentElement.previousElementSibling.textContent;
+    navigator.clipboard.writeText(content);
+    btn.classList.add('copied');
+    setTimeout(() => btn.classList.remove('copied'), 800);
   });
 });
 </script>
