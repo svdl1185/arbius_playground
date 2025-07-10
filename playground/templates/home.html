@@ -7,6 +7,16 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
   
+  /* Base responsive styles */
+  * {
+    box-sizing: border-box;
+  }
+  
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  
   .hero-section {
     background: linear-gradient(135deg, #000000 0%, #111111 50%, #000000 100%);
     min-height: 100vh;
@@ -21,6 +31,7 @@
     text-align: center;
     z-index: 10;
     position: relative;
+    padding: 0 1rem;
   }
   
   .cta-button {
@@ -38,6 +49,8 @@
     border: 1.5px solid white;
     box-shadow: none;
     backdrop-filter: blur(2px);
+    min-height: 44px;
+    min-width: 44px;
   }
   
   .cta-button:hover {
@@ -144,15 +157,136 @@
     line-height: 1.6;
   }
   
+  /* Mobile responsive styles */
   @media (max-width: 768px) {
+    .hero-content {
+      padding: 0 1.5rem;
+    }
+    
+    .cta-button {
+      padding: 0.875rem 2rem;
+      font-size: 1rem;
+      min-height: 48px;
+    }
+    
+    .section {
+      padding: 4rem 0;
+    }
+    
     .section-title {
       font-size: 2rem;
+      padding: 0 1rem;
     }
     
     .section-subtitle {
       font-size: 1rem;
+      padding: 0 1rem;
+    }
+    
+    .feature-card {
+      padding: 1.5rem;
+      margin: 0 0.5rem;
+    }
+    
+    .feature-icon {
+      width: 3rem;
+      height: 3rem;
+      margin-bottom: 1rem;
+    }
+    
+    .feature-icon i {
+      font-size: 1.25rem;
+    }
+    
+    .feature-title {
+      font-size: 1.25rem;
+    }
+    
+    .feature-description {
+      font-size: 0.9rem;
+    }
+    
+    /* Improve touch targets */
+    button, a, [role="button"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    
+    /* Adjust floating questions for mobile */
+    .floating-question {
+      font-size: 0.8rem;
     }
   }
+  
+  @media (max-width: 480px) {
+    .hero-content {
+      padding: 0 1rem;
+    }
+    
+    .cta-button {
+      padding: 0.75rem 1.5rem;
+      font-size: 0.9rem;
+      min-height: 44px;
+    }
+    
+    .section {
+      padding: 3rem 0;
+    }
+    
+    .section-title {
+      font-size: 1.75rem;
+      padding: 0 0.75rem;
+    }
+    
+    .section-subtitle {
+      font-size: 0.9rem;
+      padding: 0 0.75rem;
+    }
+    
+    .feature-card {
+      padding: 1.25rem;
+      margin: 0 0.25rem;
+    }
+    
+    .feature-icon {
+      width: 2.5rem;
+      height: 2.5rem;
+    }
+    
+    .feature-icon i {
+      font-size: 1rem;
+    }
+    
+    .feature-title {
+      font-size: 1.1rem;
+    }
+    
+    .feature-description {
+      font-size: 0.85rem;
+    }
+    
+    /* Reduce floating questions on very small screens */
+    .floating-question {
+      font-size: 0.7rem;
+    }
+  }
+  
+  /* Touch device optimizations */
+  @media (hover: none) and (pointer: coarse) {
+    .cta-button:hover {
+      transform: none;
+    }
+    
+    .feature-card:hover {
+      transform: none;
+    }
+    
+    /* Increase spacing for touch interactions */
+    .feature-card {
+      margin: 0.5rem 0;
+    }
+  }
+  
   .wallet-btn-outline {
     background: rgba(0,0,0,0.55) !important;
     color: white !important;
@@ -247,12 +381,12 @@
 {% block content %}
 <!-- Navigation -->
 <nav class="nav-glass w-full fixed top-0 z-30 transition-all duration-300">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16 relative">
+  <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 flex items-center justify-between h-16 relative">
     <!-- Logo and Name on Left -->
-    <div class="flex items-center gap-3" style="margin-left: -36px;">
-      <a href="{% url 'home' %}" class="flex items-center gap-2 font-bold text-2xl text-white">
-        <img src="{% static 'arbius.ef337b97.svg' %}" alt="Arbius Logo" class="inline-block w-7 h-7" />
-        Arbius
+    <div class="flex items-center justify-start gap-2 pl-2 py-2">
+      <a href="{% url 'home' %}" class="flex items-center gap-2 font-bold text-lg sm:text-2xl text-white">
+        <img src="{% static 'arbius.ef337b97.svg' %}" alt="Arbius Logo" class="inline-block w-7 h-7 sm:w-8 sm:h-8" />
+        <span>Arbius</span>
       </a>
     </div>
     
@@ -268,24 +402,6 @@
             <a href="#" class="wallet-dropdown-item"><i class="fas fa-chart-pie" style="width:18px;margin-right:8px;"></i>Usage</a>
             <button id="disconnect-wallet-btn" class="wallet-dropdown-item"><i class="fas fa-unlink" style="width:18px;margin-right:8px;"></i>Disconnect</button>
           </div>
-<script>
-// Ensure dropdown matches wallet button width
-(function() {
-  const pill = document.getElementById('wallet-address-pill');
-  const dropdown = document.getElementById('wallet-dropdown-menu');
-  if (pill && dropdown) {
-    function setDropdownWidth() {
-      dropdown.style.minWidth = pill.offsetWidth + 'px';
-    }
-    pill.addEventListener('click', function() {
-      setDropdownWidth();
-    });
-    window.addEventListener('resize', function() {
-      if (dropdown.style.display === 'block') setDropdownWidth();
-    });
-  }
-})();
-</script>
         </div>
       </div>
     </div>

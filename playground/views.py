@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth import login, logout
 from django.core.cache import cache
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 import json
 import hashlib
 import logging
@@ -93,14 +94,14 @@ def check_auth_status(request):
         if request.user.is_authenticated:
             # Check if user has a wallet
             try:
-                wallet = Wallet.objects.get(user=request.user)
+                wallet = Wallet.objects.get(user=request.user)  # type: ignore
                 return JsonResponse({
                     'success': True,
                     'authenticated': True,
                     'address': wallet.address,
                     'username': request.user.username
                 })
-            except Wallet.DoesNotExist:
+            except ObjectDoesNotExist:
                 return JsonResponse({
                     'success': True,
                     'authenticated': True,
@@ -245,7 +246,7 @@ def verify_signature(request):
         
         # Create or update wallet record with additional security
         try:
-            wallet, created = Wallet.objects.get_or_create(
+            wallet, created = Wallet.objects.get_or_create(  # type: ignore
                 address=address.lower(),
                 defaults={
                     'signature': signature,
