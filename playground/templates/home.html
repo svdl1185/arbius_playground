@@ -268,6 +268,24 @@
             <a href="#" class="wallet-dropdown-item"><i class="fas fa-chart-pie" style="width:18px;margin-right:8px;"></i>Usage</a>
             <button id="disconnect-wallet-btn" class="wallet-dropdown-item"><i class="fas fa-unlink" style="width:18px;margin-right:8px;"></i>Disconnect</button>
           </div>
+<script>
+// Ensure dropdown matches wallet button width
+(function() {
+  const pill = document.getElementById('wallet-address-pill');
+  const dropdown = document.getElementById('wallet-dropdown-menu');
+  if (pill && dropdown) {
+    function setDropdownWidth() {
+      dropdown.style.minWidth = pill.offsetWidth + 'px';
+    }
+    pill.addEventListener('click', function() {
+      setDropdownWidth();
+    });
+    window.addEventListener('resize', function() {
+      if (dropdown.style.display === 'block') setDropdownWidth();
+    });
+  }
+})();
+</script>
         </div>
       </div>
     </div>

@@ -199,7 +199,7 @@
     color: #fff;
     font-size: 0.82rem;
     line-height: 1.35;
-    padding: 5px 0;
+    padding: 5px 10px;
     resize: none;
     outline: none;
     min-height: 32px;
@@ -758,5 +758,21 @@ document.addEventListener('DOMContentLoaded', function() {
     textarea.dispatchEvent(new Event('input'));
   }
 });
+// Ensure dropdown matches wallet button width
+(function() {
+  const pill = document.getElementById('navbar-wallet-address-pill');
+  const dropdown = document.getElementById('navbar-wallet-dropdown-menu');
+  if (pill && dropdown) {
+    function setDropdownWidth() {
+      dropdown.style.minWidth = pill.offsetWidth + 'px';
+    }
+    pill.addEventListener('click', function() {
+      setDropdownWidth();
+    });
+    window.addEventListener('resize', function() {
+      if (dropdown.style.display === 'block') setDropdownWidth();
+    });
+  }
+})();
 </script>
 {% endblock %} 
