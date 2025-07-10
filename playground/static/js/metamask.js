@@ -1,3 +1,54 @@
+function showToast(message, type = 'error') {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const icons = {
+    error: '<i class="fas fa-times-circle"></i>',
+    success: '<i class="fas fa-check-circle"></i>',
+    info: '<i class="fas fa-info-circle"></i>',
+    warning: '<i class="fas fa-exclamation-triangle"></i>',
+  };
+  const colors = {
+    error: '#ef4444',
+    success: '#22c55e',
+    info: '#3b82f6',
+    warning: '#f59e42',
+  };
+
+  const toast = document.createElement('div');
+  toast.className = 'arbius-toast';
+  toast.style = `
+    background: ${colors[type] || '#232323'};
+    color: #fff;
+    padding: 16px 24px;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 220px;
+    max-width: 400px;
+    animation: fadeIn 0.3s;
+    position: relative;
+  `;
+  toast.innerHTML = `
+    <span style="font-size:1.3rem;">${icons[type] || ''}</span>
+    <span style="flex:1;">${message}</span>
+    <button style="background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;position:absolute;top:8px;right:12px;" aria-label="Close">&times;</button>
+  `;
+
+  // Dismiss on click
+  toast.querySelector('button').onclick = () => container.removeChild(toast);
+
+  container.appendChild(toast);
+
+  // Auto-dismiss after 5s
+  setTimeout(() => {
+    if (container.contains(toast)) container.removeChild(toast);
+  }, 5000);
+}
+
 class MetaMaskManager {
     constructor() {
         this.isConnected = false;
@@ -14,7 +65,7 @@ class MetaMaskManager {
             this.setupEventListeners();
             await this.checkBackendAuthStatus(); // Only trust backend
         } else {
-            this.showMetaMaskNotInstalled();
+            showToast('MetaMask is not installed. Please install MetaMask to use this feature.', 'warning');
         }
     }
 
@@ -119,7 +170,7 @@ class MetaMaskManager {
             this.account = null;
             this.updateUI();
             this.storeConnectionState();
-            this.showError('Failed to connect wallet. Please try again.');
+            showToast('Failed to connect wallet. Please try again.', 'error');
         } finally {
             // Reset loading state
             this.setConnectButtonLoading(false);
@@ -165,7 +216,7 @@ class MetaMaskManager {
             }
         } catch (error) {      
             console.error('Error switching network:', error);
-            this.showError('Failed to switch to Arbitrum network.');
+            showToast('Failed to switch to Arbitrum network.', 'error');
         }
     }
 
@@ -214,7 +265,7 @@ class MetaMaskManager {
             this.account = null;
             this.updateUI();
             this.storeConnectionState();
-            this.showError('Signature request was rejected.');
+            showToast('Signature request was rejected.', 'error');
         }
     }
 
@@ -235,27 +286,27 @@ class MetaMaskManager {
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
-                    this.showSuccess('Wallet connected successfully!');
+                    showToast('Wallet connected successfully!', 'success');
                 } else {
                     this.isConnected = false;
                     this.account = null;
                     this.updateUI();
                     this.storeConnectionState();
-                    this.showError(data.error || 'Signature verification failed.');
+                    showToast(data.error || 'Signature verification failed.', 'error');
                 }
             } else {
                 this.isConnected = false;
                 this.account = null;
                 this.updateUI();
                 this.storeConnectionState();
-                this.showError('Failed to verify signature.');
+                showToast('Failed to verify signature.', 'error');
             }
         } catch (error) {
             this.isConnected = false;
             this.account = null;
             this.updateUI();
             this.storeConnectionState();
-            this.showError('Failed to verify signature.');
+            showToast('Failed to verify signature.', 'error');
         }
     }
 
@@ -271,7 +322,7 @@ class MetaMaskManager {
             });
 
             if (response.ok) {
-                this.showSuccess('Wallet disconnected successfully!');
+                showToast('Wallet disconnected successfully!', 'success');
             }
         } catch (error) {
             console.error('Error logging out:', error);
@@ -478,13 +529,13 @@ class MetaMaskManager {
 
     async submitTask(customParams = {}) {
         if (typeof window.ethereum === 'undefined') {
-            this.showError('MetaMask is not installed!');
+            showToast('MetaMask is not installed!', 'warning');
             return;
         }
         
         const accounts = await window.ethereum.request({ method: 'eth_accounts' });
         if (!accounts || accounts.length === 0) {
-            this.showError('Please connect your wallet first.');
+            showToast('Please connect your wallet first.', 'error');
             return;
         }
         this.account = accounts[0];
@@ -548,11 +599,11 @@ class MetaMaskManager {
             const allowance = await aiusToken.allowance(this.account, contractAddress);
             if (allowance.lt(window.ethers.BigNumber.from(params.fee_))) {
                 // Ask user to approve
-                this.showSuccess('Requesting AIUS token approval...');
+                showToast('Requesting AIUS token approval...', 'info');
                 const approveTx = await aiusToken.approve(contractAddress, params.fee_);
-                this.showSuccess('Waiting for approval confirmation...');
+                showToast('Waiting for approval confirmation...', 'info');
                 await approveTx.wait();
-                this.showSuccess('AIUS token approved!');
+                showToast('AIUS token approved!', 'success');
             }
             // --- End ERC20 Approval Logic ---
             
@@ -580,11 +631,11 @@ class MetaMaskManager {
                 }
             );
             
-            this.showSuccess('Task submitted! Hash: ' + tx.hash);
+            showToast('Task submitted! Hash: ' + tx.hash, 'success');
             
             // Wait for transaction confirmation
             const receipt = await tx.wait();
-            this.showSuccess('Transaction confirmed! Block: ' + receipt.blockNumber);
+            showToast('Transaction confirmed! Block: ' + receipt.blockNumber, 'success');
             
             try {
                 // The event signature for TaskSubmitted
@@ -594,7 +645,7 @@ class MetaMaskManager {
                 if (log) {
                     const idHex = log.topics[1];
                     console.log("TaskSubmitted id:", idHex);
-                    this.showSuccess('TaskSubmitted id: ' + idHex);
+                    showToast('TaskSubmitted id: ' + idHex, 'success');
                 } else {
                     console.warn("TaskSubmitted event not found in logs.");
                 }
@@ -605,7 +656,7 @@ class MetaMaskManager {
             return tx.hash;
         } catch (err) {
             console.error('Task submission failed:', err);
-            this.showError('Task submission failed: ' + (err.message || err.reason || 'Unknown error'));
+            showToast('Task submission failed: ' + (err.message || err.reason || 'Unknown error'), 'error');
             return null;
         }
     }

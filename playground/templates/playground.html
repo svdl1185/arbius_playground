@@ -532,8 +532,8 @@ This uses the slice notation <code>[::-1]</code> to step backwards through the s
             <span id="current-model-icon" style="font-size:1.1rem;display:flex;align-items:center;"></span>
             <span id="current-model-pill"></span>
           </div>
-          <textarea placeholder="Type your message..." rows="1" style="min-height:28px;font-size:1rem;"></textarea>
-          <button type="submit"><i class="fas fa-paper-plane"></i></button>
+          <textarea id="message-input" placeholder="Type your message..." rows="1" style="min-height:28px;font-size:1rem;"></textarea>
+          <button id="send-task-btn" type="submit"><i class="fas fa-paper-plane"></i></button>
         </div>
       </form>
       <!-- Model Selection Overlay (hidden by default, show with JS) -->
@@ -549,6 +549,7 @@ This uses the slice notation <code>[::-1]</code> to step backwards through the s
     </div>
   </main>
 </div>
+<div id="toast-container" style="position:fixed;top:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:12px;"></div>
 <script>
 // Sidebar collapse logic
 const sidebar = document.getElementById('sidebar');
@@ -633,6 +634,7 @@ function showModelPill(model) {
 }
 function clearModelSelection() {
   currentModel = null;
+  window.selectedModel = null; // Clear global model
   showModelSelect();
   showModelPill(null);
 }
@@ -644,6 +646,7 @@ window.addEventListener('DOMContentLoaded', () => {
 modelBubbles.forEach(btn => {
   btn.addEventListener('click', () => {
     currentModel = btn.getAttribute('data-model');
+    window.selectedModel = currentModel; // Store globally for task submission
     hideModelSelect();
     showModelPill(currentModel);
     // Show a new/empty conversation area (or keep it empty)
@@ -673,6 +676,8 @@ historyItems.forEach(item => {
     else if (item.getAttribute('data-id') === 'elon') model = 'wai';
     else if (item.getAttribute('data-id') === 'film') model = 'wai';
     else model = 'm8b-uncensored'; // fallback
+    currentModel = model;
+    window.selectedModel = model; // Store globally for task submission
     showModelPill(model);
     hideModelSelect();
   });
@@ -774,5 +779,140 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 })();
+
+// Toast utility for consistent notifications
+function showToast(message, type = 'error') {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const icons = {
+    error: '<i class="fas fa-times-circle"></i>',
+    success: '<i class="fas fa-check-circle"></i>',
+    info: '<i class="fas fa-info-circle"></i>',
+    warning: '<i class="fas fa-exclamation-triangle"></i>',
+  };
+  const colors = {
+    error: '#ef4444',
+    success: '#22c55e',
+    info: '#3b82f6',
+    warning: '#f59e42',
+  };
+
+  const toast = document.createElement('div');
+  toast.className = 'arbius-toast';
+  toast.style = `
+    background: ${colors[type] || '#232323'};
+    color: #fff;
+    padding: 16px 24px;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 220px;
+    max-width: 400px;
+    animation: fadeIn 0.3s;
+    position: relative;
+  `;
+  toast.innerHTML = `
+    <span style="font-size:1.3rem;">${icons[type] || ''}</span>
+    <span style="flex:1;">${message}</span>
+    <button style="background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;position:absolute;top:8px;right:12px;" aria-label="Close">&times;</button>
+  `;
+
+  // Dismiss on click
+  toast.querySelector('button').onclick = () => container.removeChild(toast);
+
+  container.appendChild(toast);
+
+  // Auto-dismiss after 5s
+  setTimeout(() => {
+    if (container.contains(toast)) container.removeChild(toast);
+  }, 5000);
+}
+
+// Chat form submission handler
+document.addEventListener('DOMContentLoaded', function() {
+  const chatForm = document.querySelector('.chat-input-bar');
+  const messageInput = document.getElementById('message-input');
+  const sendButton = document.getElementById('send-task-btn');
+  
+  if (chatForm && messageInput && sendButton) {
+    // Handle form submission
+    chatForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const message = messageInput.value.trim();
+      if (!message) {
+        showToast('Please enter a message before sending.', 'warning');
+        return;
+      }
+      
+      // Check if a model is selected
+      if (!currentModel) {
+        showToast('Please select a model first.', 'warning');
+        return;
+      }
+      
+      // Check if wallet is connected
+      if (!window.metaMaskManager || !window.metaMaskManager.isConnected) {
+        showToast('Please connect your wallet first.', 'warning');
+        return;
+      }
+      
+      // Add user message to chat
+      addMessageToChat('user', message);
+      
+      // Clear input
+      messageInput.value = '';
+      
+      // Submit task to blockchain
+      try {
+        await window.metaMaskManager.submitTask({ customPrompt: message });
+        showToast('Task submitted to blockchain. Response will be available once processed.', 'success');
+        // Add a placeholder assistant message (in real implementation, this would come from the blockchain response)
+        addMessageToChat('assistant', 'Task submitted to blockchain. Response will be available once processed.');
+      } catch (error) {
+        if (error && error.code === 4001) {
+          // User rejected transaction
+          showToast('Transaction cancelled by user.', 'error');
+        } else if (error && error.message && error.message.toLowerCase().includes('insufficient')) {
+          showToast('Insufficient funds or allowance for transaction.', 'error');
+        } else {
+          showToast('Task submission failed: ' + (error && error.message ? error.message : 'Unknown error'), 'error');
+        }
+        addMessageToChat('assistant', 'Failed to submit task. Please try again.');
+      }
+    });
+    
+    // Handle Enter key in textarea
+    messageInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        chatForm.dispatchEvent(new Event('submit'));
+      }
+    });
+  }
+});
+
+// Function to add messages to chat
+function addMessageToChat(type, content) {
+  const chatMessagesInner = document.querySelector('.chat-messages-inner');
+  if (!chatMessagesInner) return;
+  
+  const messageRow = document.createElement('div');
+  messageRow.className = `chat-message-row ${type}`;
+  
+  const messageContent = document.createElement('div');
+  messageContent.className = 'chat-message-content';
+  messageContent.textContent = content;
+  
+  messageRow.appendChild(messageContent);
+  chatMessagesInner.appendChild(messageRow);
+  
+  // Scroll to bottom
+  chatMessagesInner.scrollTop = chatMessagesInner.scrollHeight;
+}
 </script>
 {% endblock %} 
