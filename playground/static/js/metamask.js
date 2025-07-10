@@ -2,6 +2,9 @@ function showToast(message, type = 'error') {
   const container = document.getElementById('toast-container');
   if (!container) return;
 
+  // Sanitize message to prevent XSS
+  const sanitizedMessage = sanitizeString(message);
+
   const icons = {
     error: '<i class="fas fa-times-circle"></i>',
     success: '<i class="fas fa-check-circle"></i>',
@@ -34,7 +37,7 @@ function showToast(message, type = 'error') {
   `;
   toast.innerHTML = `
     <span style="font-size:1.3rem;">${icons[type] || ''}</span>
-    <span style="flex:1;">${message}</span>
+    <span style="flex:1;">${sanitizedMessage}</span>
     <button style="background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;position:absolute;top:8px;right:12px;" aria-label="Close">&times;</button>
   `;
 
@@ -49,6 +52,44 @@ function showToast(message, type = 'error') {
   }, 5000);
 }
 
+// Security utility functions
+function sanitizeString(str) {
+  if (typeof str !== 'string') return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function isValidEthereumAddress(address) {
+  if (!address || typeof address !== 'string') return false;
+  return /^0x[a-fA-F0-9]{40}$/.test(address);
+}
+
+function isValidSignature(signature) {
+  if (!signature || typeof signature !== 'string') return false;
+  return /^0x[a-fA-F0-9]{130}$/.test(signature);
+}
+
+function validateInput(input, maxLength = 1000) {
+  if (!input || typeof input !== 'string') return false;
+  if (input.length > maxLength) return false;
+  // Check for suspicious patterns
+  const suspiciousPatterns = [
+    /<script/i,
+    /javascript:/i,
+    /data:text\/html/i,
+    /vbscript:/i,
+    /on\w+\s*=/i
+  ];
+  return !suspiciousPatterns.some(pattern => pattern.test(input));
+}
+
+function generateSecureMessage() {
+  const timestamp = new Date().toISOString();
+  const nonce = Math.random().toString(36).substring(2, 15);
+  return `Welcome to Arbius Playground!\n\nPlease sign this message to connect your wallet.\n\nTimestamp: ${timestamp}\nNonce: ${nonce}`;
+}
+
 class MetaMaskManager {
     constructor() {
         this.isConnected = false;
@@ -57,6 +98,8 @@ class MetaMaskManager {
         this.arbitrumTestnetChainId = '0x66eed'; // Arbitrum Sepolia
         this.aiusContractAddress = '0x4a24B101728e07A52053c13FB4dB2BcF490CAbc3';
         this.ethersLoaded = false;
+        this.connectionAttempts = 0;
+        this.maxConnectionAttempts = 3;
         this.init();
     }
 
@@ -64,9 +107,35 @@ class MetaMaskManager {
         if (typeof window.ethereum !== 'undefined') {
             this.setupEventListeners();
             await this.checkBackendAuthStatus(); // Only trust backend
+            
+            // Check network status periodically if connected
+            if (this.isConnected) {
+                await this.updateNetworkStatusUI();
+                // Check network status every 30 seconds
+                setInterval(async () => {
+                    if (this.isConnected) {
+                        await this.updateNetworkStatusUI();
+                    }
+                }, 30000);
+            }
         } else {
             showToast('MetaMask is not installed. Please install MetaMask to use this feature.', 'warning');
         }
+    }
+
+    // Test method for debugging network status
+    async testNetworkStatus() {
+        console.log('Testing network status...');
+        const status = await this.checkNetworkStatus();
+        console.log('Network status:', status);
+        
+        if (status.isPaused) {
+            showToast('Network is currently paused for maintenance.', 'warning');
+        } else {
+            showToast('Network is active and ready.', 'success');
+        }
+        
+        return status;
     }
 
     setupEventListeners() {
@@ -153,18 +222,39 @@ class MetaMaskManager {
 
     async connect() {
         try {
+            // Check connection attempts
+            if (this.connectionAttempts >= this.maxConnectionAttempts) {
+                showToast('Too many connection attempts. Please try again later.', 'error');
+                return;
+            }
+            this.connectionAttempts++;
+
             // Show loading state
             this.setConnectButtonLoading(true);
             
             const accounts = await window.ethereum.request({ 
                 method: 'eth_requestAccounts' 
             });
+            
+            if (!accounts || accounts.length === 0) {
+                throw new Error('No accounts found');
+            }
+            
             this.account = accounts[0];
+            
+            // Validate account address
+            if (!isValidEthereumAddress(this.account)) {
+                throw new Error('Invalid account address');
+            }
+            
             this.isConnected = true;
             await this.switchToArbitrum();
             await this.requestSignature();
             // After signature, always check backend for true state
             await this.checkBackendAuthStatus();
+            
+            // Reset connection attempts on success
+            this.connectionAttempts = 0;
         } catch (error) {
             this.isConnected = false;
             this.account = null;
@@ -254,11 +344,17 @@ class MetaMaskManager {
 
     async requestSignature() {
         try {
-            const message = `Welcome to Arbius Playground!\n\nPlease sign this message to connect your wallet.\n\nTimestamp: ${new Date().toISOString()}`;
+            const message = generateSecureMessage();
             const signature = await window.ethereum.request({
                 method: 'personal_sign',
                 params: [message, this.account]
             });
+            
+            // Validate signature format
+            if (!isValidSignature(signature)) {
+                throw new Error('Invalid signature format');
+            }
+            
             await this.verifySignature(message, signature);
         } catch (error) {
             this.isConnected = false;
@@ -395,6 +491,47 @@ class MetaMaskManager {
         }
     }
 
+    async updateNetworkStatusUI() {
+        const networkStatusIndicator = document.getElementById('network-status-indicator');
+        const networkStatusText = document.getElementById('network-status-text');
+        
+        if (!networkStatusIndicator && !networkStatusText) return;
+        
+        try {
+            const status = await this.checkNetworkStatus();
+            
+            if (status.isPaused) {
+                if (networkStatusIndicator) {
+                    networkStatusIndicator.className = 'w-2 h-2 rounded-full bg-yellow-500 animate-pulse';
+                    networkStatusIndicator.title = 'Network Paused';
+                }
+                if (networkStatusText) {
+                    networkStatusText.textContent = 'Network Paused';
+                    networkStatusText.className = 'text-yellow-500 text-xs';
+                }
+            } else {
+                if (networkStatusIndicator) {
+                    networkStatusIndicator.className = 'w-2 h-2 rounded-full bg-green-500';
+                    networkStatusIndicator.title = 'Network Active';
+                }
+                if (networkStatusText) {
+                    networkStatusText.textContent = 'Network Active';
+                    networkStatusText.className = 'text-green-500 text-xs';
+                }
+            }
+        } catch (error) {
+            console.error('Error updating network status UI:', error);
+            if (networkStatusIndicator) {
+                networkStatusIndicator.className = 'w-2 h-2 rounded-full bg-gray-500';
+                networkStatusIndicator.title = 'Status Unknown';
+            }
+            if (networkStatusText) {
+                networkStatusText.textContent = 'Status Unknown';
+                networkStatusText.className = 'text-gray-500 text-xs';
+            }
+        }
+    }
+
     async updateUI() {
         const connectBtn = document.getElementById('connect-wallet-btn');
         const connectBtnMobile = document.getElementById('connect-wallet-btn-mobile');
@@ -403,13 +540,19 @@ class MetaMaskManager {
         const walletConnectedContainer = document.getElementById('wallet-connected-container');
         const walletAddressPill = document.getElementById('wallet-address-pill');
         const walletDropdownMenu = document.getElementById('wallet-dropdown-menu');
+        const networkStatusContainer = document.getElementById('network-status-container');
+        
         // Hide all by default
         if (connectBtn) connectBtn.style.display = 'inline-flex';
         if (walletConnectedContainer) walletConnectedContainer.style.display = 'none';
+        if (networkStatusContainer) networkStatusContainer.style.display = 'none';
+        
         // Show correct UI
         if (this.isConnected && this.account) {
             if (connectBtn) connectBtn.style.display = 'none';
             if (walletConnectedContainer) walletConnectedContainer.style.display = 'inline-block';
+            if (networkStatusContainer) networkStatusContainer.style.display = 'flex';
+            
             // Update wallet pill for playground
             const navbarWalletPill = document.getElementById('navbar-wallet-address-pill');
             if (navbarWalletPill) {
@@ -429,6 +572,9 @@ class MetaMaskManager {
                 arbiscanLink.target = '_blank';
                 arbiscanLink.rel = 'noopener noreferrer';
             }
+            
+            // Update network status if connected
+            await this.updateNetworkStatusUI();
         }
         // Hide dropdown menu by default
         if (walletDropdownMenu) walletDropdownMenu.style.display = 'none';
@@ -462,7 +608,7 @@ class MetaMaskManager {
                 <div class="w-5 h-5 rounded-full bg-red-400 flex items-center justify-center">
                     <i class="fas fa-exclamation text-red-900 text-xs"></i>
                 </div>
-                <span class="font-medium">${message}</span>
+                <span class="font-medium">${sanitizeString(message)}</span>
             </div>
         `;
         document.body.appendChild(toast);
@@ -490,7 +636,7 @@ class MetaMaskManager {
                 <div class="w-5 h-5 rounded-full bg-green-400 flex items-center justify-center">
                     <i class="fas fa-check text-green-900 text-xs"></i>
                 </div>
-                <span class="font-medium">${message}</span>
+                <span class="font-medium">${sanitizeString(message)}</span>
             </div>
         `;
         document.body.appendChild(toast);
@@ -525,7 +671,34 @@ class MetaMaskManager {
         return cookieValue;
     }
 
-
+    async checkNetworkStatus() {
+        try {
+            await this.loadEthers();
+            if (!window.ethers || !this.account) return { isPaused: false, error: null };
+            
+            const provider = new window.ethers.providers.Web3Provider(window.ethereum);
+            const contractAddress = '0x9b51Ef044d3486A1fB0A2D55A6e0CeeAdd323E66';
+            
+            // Contract ABI for checking pause status
+            const contractAbi = [
+                'function paused() view returns (bool)',
+                'function owner() view returns (address)'
+            ];
+            
+            const contract = new window.ethers.Contract(contractAddress, contractAbi, provider);
+            
+            try {
+                const isPaused = await contract.paused();
+                return { isPaused, error: null };
+            } catch (error) {
+                console.warn('Could not check pause status:', error);
+                return { isPaused: false, error: 'Could not check network status' };
+            }
+        } catch (error) {
+            console.error('Error checking network status:', error);
+            return { isPaused: false, error: 'Network status check failed' };
+        }
+    }
 
     async submitTask(customParams = {}) {
         if (typeof window.ethereum === 'undefined') {
@@ -540,9 +713,22 @@ class MetaMaskManager {
         }
         this.account = accounts[0];
         
+        // Validate account address
+        if (!isValidEthereumAddress(this.account)) {
+            showToast('Invalid account address.', 'error');
+            return;
+        }
+        
         const chainId = await window.ethereum.request({ method: 'eth_chainId' });
         if (chainId !== this.arbitrumChainId) {
             await this.switchToArbitrum();
+        }
+        
+        // Check network status before proceeding
+        const networkStatus = await this.checkNetworkStatus();
+        if (networkStatus.isPaused) {
+            showToast('The Arbius network is currently paused for maintenance. Please try again later.', 'warning');
+            return null;
         }
         
         try {
@@ -567,24 +753,31 @@ class MetaMaskManager {
             // Create contract instance
             const contract = new window.ethers.Contract(contractAddress, contractAbi, signer);
             
+            // Validate custom prompt
+            const customPrompt = customParams.customPrompt || '';
+            if (!validateInput(customPrompt, 5000)) { // Allow longer prompts for AI tasks
+                showToast('Invalid prompt content.', 'error');
+                return;
+            }
+            
             // Prepare parameters
             let modelParams = {
                 version_: 0,
                 owner_: this.account,
                 model_: '0x6cb3eed9fe3f32da1910825b98bd49d537912c99410e7a35f30add137fd3b64c', // M8B default
                 fee_: 28000000000000, // M8B default
-                input_: this.encodeTaskInput(customParams.customPrompt)
+                input_: this.encodeTaskInput(customPrompt)
             };
             // Switch based on selected model
             const selected = window.selectedModel || 'm8b-uncensored';
             if (selected === 'qwen-qwq') {
                 modelParams.model_ = '0x89c39001e3b23d2092bd998b62f07b523d23deb55e1627048b4ed47a4a38d5cc';
                 modelParams.fee_ = 7000000000000000;
-                modelParams.input_ = this.encodeTaskInputQwen(customParams.customPrompt);
+                modelParams.input_ = this.encodeTaskInputQwen(customPrompt);
             } else if (selected === 'wai') {
                 modelParams.model_ = '0xa473c70e9d7c872ac948d20546bc79db55fa64ca325a4b229aaffddb7f86aae0';
                 modelParams.fee_ = 3500000000000000;
-                modelParams.input_ = this.encodeTaskInputWai(customParams.customPrompt);
+                modelParams.input_ = this.encodeTaskInputWai(customPrompt);
             }
             // Merge with any custom params (overrides)
             const params = { ...modelParams, ...customParams };
@@ -607,29 +800,71 @@ class MetaMaskManager {
             }
             // --- End ERC20 Approval Logic ---
             
-            // Estimate gas
-            const gasEstimate = await contract.estimateGas.submitTask(
-                params.version_,
-                params.owner_,
-                params.model_,
-                params.fee_,
-                params.input_
-            );
+            // Estimate gas with better error handling
+            let gasEstimate;
+            try {
+                gasEstimate = await contract.estimateGas.submitTask(
+                    params.version_,
+                    params.owner_,
+                    params.model_,
+                    params.fee_,
+                    params.input_
+                );
+            } catch (gasError) {
+                // Handle specific contract errors
+                if (gasError.message && gasError.message.includes('paused')) {
+                    showToast('The Arbius network is currently paused for maintenance. Please try again later.', 'warning');
+                    return null;
+                } else if (gasError.message && gasError.message.includes('insufficient')) {
+                    showToast('Insufficient AIUS tokens for this task. Please check your balance.', 'error');
+                    return null;
+                } else if (gasError.message && gasError.message.includes('unauthorized')) {
+                    showToast('You are not authorized to submit this task.', 'error');
+                    return null;
+                } else if (gasError.message && gasError.message.includes('invalid model')) {
+                    showToast('Invalid model selected. Please try a different model.', 'error');
+                    return null;
+                } else {
+                    // For other gas estimation errors, try with a default gas limit
+                    console.warn('Gas estimation failed, using default gas limit:', gasError.message);
+                    gasEstimate = window.ethers.BigNumber.from('500000'); // Default gas limit
+                }
+            }
             
             // Add 20% buffer to gas estimate
             const gasLimit = gasEstimate.mul(120).div(100);
             
-            // Submit transaction
-            const tx = await contract.submitTask(
-                params.version_,
-                params.owner_,
-                params.model_,
-                params.fee_,
-                params.input_,
-                {
-                    gasLimit: gasLimit
+            // Submit transaction with better error handling
+            let tx;
+            try {
+                tx = await contract.submitTask(
+                    params.version_,
+                    params.owner_,
+                    params.model_,
+                    params.fee_,
+                    params.input_,
+                    {
+                        gasLimit: gasLimit
+                    }
+                );
+            } catch (txError) {
+                // Handle transaction submission errors
+                if (txError.message && txError.message.includes('paused')) {
+                    showToast('The Arbius network is currently paused for maintenance. Please try again later.', 'warning');
+                    return null;
+                } else if (txError.message && txError.message.includes('insufficient funds')) {
+                    showToast('Insufficient ETH for gas fees. Please add more ETH to your wallet.', 'error');
+                    return null;
+                } else if (txError.message && txError.message.includes('insufficient allowance')) {
+                    showToast('Insufficient AIUS token allowance. Please approve more tokens.', 'error');
+                    return null;
+                } else if (txError.message && txError.message.includes('user rejected')) {
+                    showToast('Transaction was cancelled by user.', 'info');
+                    return null;
+                } else {
+                    throw txError; // Re-throw other errors
                 }
-            );
+            }
             
             showToast('Task submitted! Hash: ' + tx.hash, 'success');
             
@@ -656,12 +891,33 @@ class MetaMaskManager {
             return tx.hash;
         } catch (err) {
             console.error('Task submission failed:', err);
-            showToast('Task submission failed: ' + (err.message || err.reason || 'Unknown error'), 'error');
+            
+            // Provide user-friendly error messages
+            let errorMessage = 'Task submission failed';
+            
+            if (err.message) {
+                if (err.message.includes('paused')) {
+                    errorMessage = 'The Arbius network is currently paused for maintenance. Please try again later.';
+                } else if (err.message.includes('insufficient funds')) {
+                    errorMessage = 'Insufficient ETH for gas fees. Please add more ETH to your wallet.';
+                } else if (err.message.includes('insufficient allowance')) {
+                    errorMessage = 'Insufficient AIUS token allowance. Please approve more tokens.';
+                } else if (err.message.includes('user rejected')) {
+                    errorMessage = 'Transaction was cancelled by user.';
+                } else if (err.message.includes('network')) {
+                    errorMessage = 'Network error. Please check your connection and try again.';
+                } else if (err.message.includes('timeout')) {
+                    errorMessage = 'Transaction timed out. Please try again.';
+                } else {
+                    // For unknown errors, show a generic message but log the full error
+                    errorMessage = 'Task submission failed. Please try again later.';
+                }
+            }
+            
+            showToast(errorMessage, 'error');
             return null;
         }
     }
-
-
 
     encodeTaskInput(customPrompt = null) {
         // M8B default
@@ -692,8 +948,6 @@ class MetaMaskManager {
         const jsonString = JSON.stringify(taskInput);
         return window.ethers.utils.toUtf8Bytes(jsonString);
     }
-
-
 }
 
 // === Model Selection Support (Refactored) ===
@@ -795,6 +1049,12 @@ document.addEventListener('DOMContentLoaded', () => {
     window.submitTaskWithCustomParams = async (params) => {
         if (window.metaMaskManager) {
             return await window.metaMaskManager.submitTask(params);
+        }
+    };
+    
+    window.testNetworkStatus = async () => {
+        if (window.metaMaskManager) {
+            return await window.metaMaskManager.testNetworkStatus();
         }
     };
     
