@@ -718,7 +718,11 @@
 <div class="playground-root" style="margin-top: 64px;">
   <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
-    <button class="sidebar-toggle-btn" id="sidebar-toggle-btn"><i class="fas fa-bars"></i></button>
+    <button class="sidebar-toggle-btn" id="sidebar-toggle-btn">
+      <i class="fas fa-bars icon-mobile" style="display:none;"></i>
+      <i class="fas fa-angle-left icon-desktop" style="display:none;"></i>
+      <i class="fas fa-angle-right icon-desktop" style="display:none;"></i>
+    </button>
     <div class="sidebar-header">
       <button id="new-chat-btn" style="background:#fff;color:#181818;font-weight:600;border:none;border-radius:999px;padding:10px 0;margin-bottom:18px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:1.05rem;cursor:pointer;width:100%;"><i class="fas fa-plus"></i> <span style="font-size:1rem;">New Chat</span></button>
     </div>
@@ -852,23 +856,44 @@ This uses the slice notation <code>[::-1]</code> to step backwards through the s
 const sidebar = document.getElementById('sidebar');
 const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
 const playgroundRoot = document.querySelector('.playground-root');
+const iconMobile = sidebarToggleBtn.querySelector('.icon-mobile');
+const iconLeft = sidebarToggleBtn.querySelector('.fa-angle-left');
+const iconRight = sidebarToggleBtn.querySelector('.fa-angle-right');
+
+function updateSidebarToggleIcon() {
+  if (window.innerWidth <= 768) {
+    iconMobile.style.display = 'inline';
+    iconLeft.style.display = 'none';
+    iconRight.style.display = 'none';
+    // Set hamburger or close icon for mobile
+    if (sidebar.classList.contains('open')) {
+      iconMobile.classList.remove('fa-bars');
+      iconMobile.classList.add('fa-times');
+    } else {
+      iconMobile.classList.add('fa-bars');
+      iconMobile.classList.remove('fa-times');
+    }
+  } else {
+    iconMobile.style.display = 'none';
+    // Show chevron based on collapsed state
+    if (sidebar.classList.contains('collapsed')) {
+      iconLeft.style.display = 'none';
+      iconRight.style.display = 'inline';
+    } else {
+      iconLeft.style.display = 'inline';
+      iconRight.style.display = 'none';
+    }
+  }
+}
 
 function toggleSidebar() {
   if (window.innerWidth <= 768) {
     // Mobile behavior: slide in/out
     sidebar.classList.toggle('open');
-    if (sidebar.classList.contains('open')) {
-      sidebarToggleBtn.querySelector('i').classList.remove('fa-bars');
-      sidebarToggleBtn.querySelector('i').classList.add('fa-times');
-    } else {
-      sidebarToggleBtn.querySelector('i').classList.remove('fa-times');
-      sidebarToggleBtn.querySelector('i').classList.add('fa-bars');
-    }
+    updateSidebarToggleIcon();
   } else {
     // Desktop behavior: collapse/expand
     sidebar.classList.toggle('collapsed');
-    sidebarToggleBtn.querySelector('i').classList.toggle('fa-angle-left');
-    sidebarToggleBtn.querySelector('i').classList.toggle('fa-angle-right');
     if (playgroundRoot) {
       if (sidebar.classList.contains('collapsed')) {
         playgroundRoot.classList.add('sidebar-collapsed');
@@ -876,30 +901,24 @@ function toggleSidebar() {
         playgroundRoot.classList.remove('sidebar-collapsed');
       }
     }
+    updateSidebarToggleIcon();
   }
 }
 
 sidebarToggleBtn.addEventListener('click', toggleSidebar);
+window.addEventListener('resize', updateSidebarToggleIcon);
+window.addEventListener('DOMContentLoaded', updateSidebarToggleIcon);
 
 // Close mobile sidebar when clicking outside
 document.addEventListener('click', (e) => {
   if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
     if (!sidebar.contains(e.target) && !sidebarToggleBtn.contains(e.target)) {
       sidebar.classList.remove('open');
-      sidebarToggleBtn.querySelector('i').classList.remove('fa-times');
-      sidebarToggleBtn.querySelector('i').classList.add('fa-bars');
+      updateSidebarToggleIcon(); // Update icon on close
     }
   }
 });
 
-// Handle window resize
-window.addEventListener('resize', () => {
-  if (window.innerWidth > 768) {
-    sidebar.classList.remove('open');
-    sidebarToggleBtn.querySelector('i').classList.remove('fa-times');
-    sidebarToggleBtn.querySelector('i').classList.add('fa-bars');
-  }
-});
 // History filter logic
 const filterPills = document.querySelectorAll('.filter-pill');
 const historyItems = document.querySelectorAll('.history-item');
