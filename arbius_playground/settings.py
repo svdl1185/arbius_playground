@@ -152,19 +152,24 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
     SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
     
-    # Content Security Policy
-    CSP_DEFAULT_SRC = ("'self'",)
-    CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://cdnjs.cloudflare.com")
-    CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com")
-    CSP_FONT_SRC = ("'self'", "https://cdnjs.cloudflare.com", "https://fonts.gstatic.com")
-    CSP_IMG_SRC = ("'self'", "data:", "https:", "blob:")
-    CSP_CONNECT_SRC = ("'self'", "https://arb1.arbitrum.io", "https://arbiscan.io")
-    CSP_FRAME_ANCESTORS = ("'none'",)
-    CSP_BASE_URI = ("'self'",)
-    CSP_FORM_ACTION = ("'self'",)
-    
-    # Add CSP middleware
-    MIDDLEWARE.insert(0, 'django_csp.middleware.CSPMiddleware')
+    # Content Security Policy - only add if django_csp is available
+    try:
+        import django_csp
+        CSP_DEFAULT_SRC = ("'self'",)
+        CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://cdnjs.cloudflare.com")
+        CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com")
+        CSP_FONT_SRC = ("'self'", "https://cdnjs.cloudflare.com", "https://fonts.gstatic.com")
+        CSP_IMG_SRC = ("'self'", "data:", "https:", "blob:")
+        CSP_CONNECT_SRC = ("'self'", "https://arb1.arbitrum.io", "https://arbiscan.io")
+        CSP_FRAME_ANCESTORS = ("'none'",)
+        CSP_BASE_URI = ("'self'",)
+        CSP_FORM_ACTION = ("'self'",)
+        
+        # Add CSP middleware
+        MIDDLEWARE.insert(0, 'django_csp.middleware.CSPMiddleware')
+    except ImportError:
+        # django_csp not available, skip CSP configuration
+        pass
 
 # Session security settings
 SESSION_COOKIE_HTTPONLY = True
