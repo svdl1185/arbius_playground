@@ -578,6 +578,17 @@ class MetaMaskManager {
         }
         // Hide dropdown menu by default
         if (walletDropdownMenu) walletDropdownMenu.style.display = 'none';
+
+        const walletAddressSpan = document.getElementById('wallet-address');
+        if (walletAddressSpan) {
+            if (this.account) {
+                console.log('[MetaMask Debug] Setting wallet address:', this.account);
+                walletAddressSpan.textContent = this.account;
+            } else {
+                console.log('[MetaMask Debug] No wallet address found');
+                walletAddressSpan.textContent = '[No address]';
+            }
+        }
     }
 
     showMetaMaskNotInstalled() {

@@ -1,0 +1,299 @@
+{% extends 'base.html' %}
+
+{% block title %}Gallery - Arbius Playground{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-darkbg pt-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <!-- Minimal Search and Filters -->
+        <form method="get" action="{{ request.path }}" class="flex flex-wrap gap-3 items-end mb-8" id="gallery-filter-form">
+            <input type="text" name="q" id="prompt-filter" class="px-4 py-2 bg-darkbg border border-border rounded-lg text-white placeholder-textmuted focus:outline-none focus:ring-1 focus:ring-white/20 focus:border-white/20 text-sm" placeholder="Search prompts..." value="{{ search_query }}" autocomplete="off">
+            <input type="text" name="task_submitter" id="user-filter" class="px-4 py-2 bg-darkbg border border-border rounded-lg text-white placeholder-textmuted focus:outline-none focus:ring-1 focus:ring-white/20 focus:border-white/20 text-sm" placeholder="User (0x...)" value="{{ selected_task_submitter }}" autocomplete="off">
+            <select name="model" id="model-filter" class="px-4 py-2 bg-darkbg border border-border rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-white/20 focus:border-white/20 text-sm">
+                <option value="">All Models</option>
+                {% for model in available_models %}
+                    <option value="{{ model.model_id }}" {% if model.model_id == selected_model %}selected{% endif %}>{{ model.short_name }} ({{ model.count }})</option>
+                {% endfor %}
+            </select>
+            <select name="sort" id="sort-filter" class="px-4 py-2 bg-darkbg border border-border rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-white/20 focus:border-white/20 text-sm">
+                <option value="upvotes" {% if sort_by == 'upvotes' or not sort_by %}selected{% endif %}>Most Upvoted</option>
+                <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Newest</option>
+                <option value="oldest" {% if sort_by == 'oldest' %}selected{% endif %}>Oldest</option>
+                <option value="comments" {% if sort_by == 'comments' %}selected{% endif %}>Most Commented</option>
+            </select>
+            <label class="flex items-center space-x-2 text-textmuted text-sm cursor-pointer select-none">
+                <input type="checkbox" name="exclude_automine" value="true" id="automine-toggle" {% if exclude_automine %}checked{% endif %} class="sr-only">
+                <span id="automine-toggle-bg" class="relative inline-block w-10 h-6 align-middle select-none transition-colors duration-200 {% if exclude_automine %}bg-blue-600{% else %}bg-gray-700{% endif %} rounded-full shadow-inner">
+                    <span class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-200" style="transform: translateX({% if exclude_automine %}1.25rem{% else %}0{% endif %});"></span>
+                </span>
+                <span class="ml-1">Hide Automine</span>
+            </label>
+            <!-- No Search button, auto-submit on change -->
+        </form>
+
+        <!-- Active Filters (minimal) -->
+        {% if selected_model or search_query or selected_task_submitter %}
+            <div class="flex flex-wrap items-center gap-2 mb-4">
+                {% if search_query %}
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-white">Search: "{{ search_query }}"</span>
+                {% endif %}
+                {% if selected_model %}
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-300">Model: {{ selected_model|truncatechars:16 }}</span>
+                {% endif %}
+                {% if selected_task_submitter %}
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-300">User: {{ selected_task_submitter|truncatechars:16 }}</span>
+                {% endif %}
+                <a href="{% url 'gallery_index' %}" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-500/20 text-gray-300 hover:bg-gray-500/30 transition-colors">Clear All</a>
+            </div>
+        {% endif %}
+
+        <!-- Images Grid -->
+        {% if page_obj %}
+            <div id="gallery-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {% for image in page_obj %}
+                    <div class="bg-cardbg border border-border rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 group">
+                        <a href="{% url 'image_detail' image.id %}" class="block">
+                            <div class="aspect-square overflow-hidden">
+                                {% if image.is_accessible %}
+                                    <img src="{{ image.image_url }}" 
+                                         alt="Arbius AI Art - {{ image.cid }}" 
+                                         loading="lazy"
+                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                {% else %}
+                                    <div class="w-full h-full flex items-center justify-center bg-darkbg">
+                                        <div class="text-center">
+                                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
+                                            <div class="text-textmuted text-sm">Processing...</div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="p-4">
+                                {% if image.clean_prompt %}
+                                    <div class="text-sm text-textmuted mb-3 line-clamp-2">
+                                        <i class="fas fa-comment mr-2"></i>
+                                        "{{ image.clean_prompt|truncatechars:80 }}"
+                                    </div>
+                                {% endif %}
+                                
+                                <!-- Social Features -->
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-4">
+                                        <button class="upvote-btn flex items-center space-x-2 text-sm {% if wallet_address %}cursor-pointer hover:text-red-400{% endif %}{% if image.user_has_upvoted %} text-red-400{% else %} text-textmuted{% endif %}" 
+                                                data-image-id="{{ image.id }}" 
+                                                {% if not wallet_address %}disabled title="Connect wallet to upvote"{% endif %}>
+                                            {% if image.user_has_upvoted %}
+                                                <i class="fas fa-heart"></i>
+                                            {% else %}
+                                                <i class="far fa-heart"></i>
+                                            {% endif %}
+                                            <span class="upvote-count">{{ image.upvote_count|default:0 }}</span>
+                                        </button>
+                                        <div class="flex items-center space-x-2 text-sm text-textmuted">
+                                            <i class="fas fa-comment"></i>
+                                            <span class="comment-count">{{ image.comment_count|default:0 }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-xs text-textmuted">
+                                        <i class="fas fa-calendar mr-1"></i>
+                                        {{ image.timestamp|date:"M d, Y" }}
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            <!-- Infinite scroll loader -->
+            <div id="gallery-infinite-scroll-loader" class="flex justify-center mt-12">
+                <span class="text-textmuted hidden" id="gallery-loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i> Loading more images...
+                </span>
+            </div>
+        {% else %}
+            <div class="text-center py-12">
+                <div class="text-6xl text-textmuted mb-4">
+                    <i class="fas fa-images"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-white mb-2">No images found</h3>
+                <p class="text-textmuted">Try adjusting your search criteria or filters.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit on filter change (except main search input)
+    const form = document.getElementById('gallery-filter-form');
+    const promptInput = document.getElementById('prompt-filter');
+    const userInput = document.getElementById('user-filter');
+    const modelFilter = document.getElementById('model-filter');
+    const sortFilter = document.getElementById('sort-filter');
+    const automineToggle = document.getElementById('automine-toggle');
+
+    [userInput, modelFilter, sortFilter, automineToggle].forEach(el => {
+        if (el) {
+            el.addEventListener('change', () => form.submit());
+        }
+    });
+    // For prompt input: submit on Enter or blur
+    if (promptInput) {
+        promptInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                form.submit();
+            }
+        });
+        promptInput.addEventListener('blur', function() {
+            if (promptInput.value !== '') form.submit();
+        });
+    }
+
+    // Toggle styling for automine
+    function updateToggle() {
+        const dot = automineToggle.parentElement.querySelector('.dot');
+        const bg = document.getElementById('automine-toggle-bg');
+        if (automineToggle.checked) {
+            dot.style.transform = 'translateX(1.25rem)';
+            bg.classList.remove('bg-gray-700');
+            bg.classList.add('bg-blue-600');
+        } else {
+            dot.style.transform = 'translateX(0)';
+            bg.classList.remove('bg-blue-600');
+            bg.classList.add('bg-gray-700');
+        }
+    }
+    if (automineToggle) {
+        automineToggle.addEventListener('change', updateToggle);
+        updateToggle();
+    }
+
+    // Handle upvote clicks
+    document.querySelectorAll('.upvote-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const imageId = this.dataset.imageId;
+            const isDisabled = this.hasAttribute('disabled');
+            
+            if (isDisabled) {
+                alert('Please connect your wallet to upvote images.');
+                return;
+            }
+            
+            fetch(`/api/image/${imageId}/upvote/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const icon = this.querySelector('i');
+                    const count = this.querySelector('.upvote-count');
+                    
+                    if (data.action === 'added') {
+                        icon.className = 'fas fa-heart';
+                        this.classList.add('text-red-400');
+                        this.classList.remove('text-textmuted');
+                    } else {
+                        icon.className = 'far fa-heart';
+                        this.classList.remove('text-red-400');
+                        this.classList.add('text-textmuted');
+                    }
+                    
+                    count.textContent = data.upvote_count;
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while upvoting.');
+            });
+        });
+    });
+});
+
+let currentPage = {{ page_obj.number|default:1 }};
+let hasNextPage = {{ page_obj.has_next|yesno:'true,false' }};
+const grid = document.getElementById('gallery-grid');
+const loader = document.getElementById('gallery-infinite-scroll-loader');
+const spinner = document.getElementById('gallery-loading-spinner');
+
+function createImageCard(image) {
+    // Returns a DOM element for a gallery image card (copy the HTML structure from the for-loop above)
+    const div = document.createElement('div');
+    div.className = 'bg-cardbg border border-border rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 group';
+    div.innerHTML = `
+        <a href="/gallery/image/${image.id}/" class="block">
+            <div class="aspect-square overflow-hidden">
+                ${image.is_accessible ? `<img src="${image.image_url}" alt="Arbius AI Art" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">` : `<div class=\"w-full h-full flex items-center justify-center bg-darkbg\"><div class=\"text-center\"><div class=\"animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2\"></div><div class=\"text-textmuted text-sm\">Processing...</div></div></div>`}
+            </div>
+            <div class="p-4">
+                ${image.prompt ? `<div class=\"text-sm text-textmuted mb-3 line-clamp-2\"><i class=\"fas fa-comment mr-2\"></i>\"${image.prompt.substring(0, 80)}\"</div>` : ''}
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <button class="upvote-btn flex items-center space-x-2 text-sm text-textmuted" disabled title="Connect wallet to upvote">
+                            <i class="far fa-heart"></i>
+                            <span class="upvote-count">${image.upvote_count || 0}</span>
+                        </button>
+                        <div class="flex items-center space-x-2 text-sm text-textmuted">
+                            <i class="fas fa-comment"></i>
+                            <span class="comment-count">${image.comment_count || 0}</span>
+                        </div>
+                    </div>
+                    <div class="text-xs text-textmuted">
+                        <i class="fas fa-calendar mr-1"></i>
+                        ${image.timestamp}
+                    </div>
+                </div>
+            </div>
+        </a>
+    `;
+    return div;
+}
+
+let isLoading = false;
+
+async function loadNextPage() {
+    if (!hasNextPage || isLoading) return;
+    isLoading = true;
+    spinner.classList.remove('hidden');
+    try {
+        const params = new URLSearchParams(window.location.search);
+        params.set('page', currentPage + 1);
+        params.set('page_size', 24);
+        const res = await fetch(`/api/gallery/images/?${params.toString()}`);
+        const data = await res.json();
+        data.images.forEach(img => {
+            grid.appendChild(createImageCard(img));
+        });
+        hasNextPage = data.has_next;
+        currentPage = data.next_page || currentPage + 1;
+        if (!hasNextPage) loader.style.display = 'none';
+    } catch (e) {
+        console.error('Error loading more images:', e);
+    } finally {
+        spinner.classList.add('hidden');
+        isLoading = false;
+    }
+}
+
+window.addEventListener('scroll', () => {
+    if (!hasNextPage || isLoading) return;
+    const scrollY = window.scrollY || window.pageYOffset;
+    const viewportHeight = window.innerHeight;
+    const fullHeight = document.body.offsetHeight;
+    if (scrollY + viewportHeight > fullHeight - 100) {
+        loadNextPage();
+    }
+});
+</script>
+{% endblock %} 

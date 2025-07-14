@@ -192,6 +192,12 @@
           </a>
         </div>
         
+        <!-- Desktop Navigation -->
+        <div class="hidden md:flex items-center gap-6 ml-8">
+          <a href="{% url 'playground' %}" class="nav-link {% if request.resolver_match.url_name == 'playground' %}nav-link-active{% endif %}">Playground</a>
+          <a href="{% url 'gallery_index' %}" class="nav-link {% if 'gallery' in request.resolver_match.url_name %}nav-link-active{% endif %}">Gallery</a>
+        </div>
+        
         <!-- Wallet/Actions -->
         <div class="flex items-center gap-3 ml-auto">
           <!-- Desktop Wallet Section -->
@@ -227,9 +233,8 @@
       </div>
       <!-- Mobile Menu -->
       <div id="nav-mobile-menu" class="nav-mobile-menu fixed top-16 left-0 w-full py-6 px-6 flex flex-col gap-4 md:hidden hidden z-40">
-        <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}nav-link-active{% endif %}">Home</a>
         <a href="{% url 'playground' %}" class="nav-link {% if request.resolver_match.url_name == 'playground' %}nav-link-active{% endif %}">Playground</a>
-        <a href="https://snorlax.app/gallery/" target="_blank" class="nav-link">Gallery</a>
+        <a href="{% url 'gallery_index' %}" class="nav-link {% if 'gallery' in request.resolver_match.url_name %}nav-link-active{% endif %}">Gallery</a>
         
         <!-- Mobile Connected State -->
         <div id="wallet-connected-mobile" class="flex items-center gap-2 bg-transparent border-none rounded-full px-2 py-1 transition-all duration-300 text-xs font-mono" style="display: none; min-width:0;">
@@ -278,5 +283,8 @@
     {% block extra_js %}{% endblock %}
     <!-- MetaMask Integration -->
     <script src="{% static 'js/metamask.js' %}"></script>
+    
+    <!-- Toast Container -->
+    <div id="toast-container" style="position:fixed;top:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:12px;"></div>
 </body>
 </html> 
