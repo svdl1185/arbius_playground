@@ -8,7 +8,7 @@ from django.core.cache import cache
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, Q, Avg, Min, Max, Case, When, IntegerField, Exists, OuterRef
-from django.core.paginator import Paginator
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.utils import timezone
 from django.urls import reverse
 from django.contrib import messages
@@ -601,10 +601,11 @@ def gallery_images_api(request):
     selected_model = request.GET.get('model', '').strip()
     sort_by = request.GET.get('sort', 'upvotes')
     exclude_automine = request.GET.get('exclude_automine', 'false').lower() in ['true', '1', 'on']
-    page_number = int(request.GET.get('page', 1))
-    page_size = int(request.GET.get('page_size', 24))
-
+    
+    # Get base queryset with filtering
     images = get_base_queryset(exclude_automine=exclude_automine)
+    
+    # Apply filters
     if search_query:
         images = images.filter(
             Q(prompt__icontains=search_query) |
@@ -612,10 +613,14 @@ def gallery_images_api(request):
             Q(transaction_hash__icontains=search_query) |
             Q(task_id__icontains=search_query)
         )
+    
     if selected_task_submitter:
         images = images.filter(task_submitter__iexact=selected_task_submitter)
+    
     if selected_model:
         images = images.filter(model_id=selected_model)
+    
+    # Apply sorting
     if sort_by == 'upvotes':
         images = images.annotate(upvote_count_db=Count('upvotes')).order_by('-upvote_count_db', '-timestamp')
     elif sort_by == 'comments':
@@ -626,26 +631,144 @@ def gallery_images_api(request):
         images = images.order_by('timestamp')
     else:
         images = images.annotate(upvote_count_db=Count('upvotes')).order_by('-upvote_count_db', '-timestamp')
-
-    paginator = Paginator(images, page_size)
-    page_obj = paginator.get_page(page_number)
-
-    # Serialize only the fields needed for the gallery grid
-    image_list = [
-        {
-            'id': img.id,
-            'image_url': img.image_url,
-            'prompt': img.clean_prompt,
-            'upvote_count': img.upvote_count,
-            'comment_count': img.comment_count,
-            'timestamp': img.timestamp.strftime('%Y-%m-%d'),
-            'user_has_upvoted': False,  # (optional: can be improved)
-            'is_accessible': img.is_accessible,
-        }
-        for img in page_obj
-    ]
+    
+    # Pagination
+    page = request.GET.get('page', 1)
+    paginator = Paginator(images, 20)  # 20 images per page
+    
+    try:
+        page_obj = paginator.page(page)
+    except (PageNotAnInteger, EmptyPage):
+        page_obj = paginator.page(1)
+    
+    # Serialize images
+    images_data = []
+    for image in page_obj:
+        images_data.append({
+            'id': image.id,
+            'transaction_hash': image.transaction_hash,
+            'task_id': image.task_id,
+            'cid': image.cid,
+            'ipfs_url': image.ipfs_url,
+            'image_url': image.image_url,
+            'prompt': image.prompt,
+            'model_id': image.model_id,
+            'task_submitter': image.task_submitter,
+            'solution_provider': image.solution_provider,
+            'timestamp': image.timestamp.isoformat(),
+            'upvote_count': image.upvotes.count(),
+            'comment_count': image.comments.count(),
+            'is_upvoted': image.upvotes.filter(wallet_address=getattr(request, 'wallet_address', None)).exists(),
+        })
+    
     return JsonResponse({
-        'images': image_list,
+        'images': images_data,
         'has_next': page_obj.has_next(),
         'next_page': page_obj.next_page_number() if page_obj.has_next() else None,
+        'total_pages': paginator.num_pages,
+        'total_count': paginator.count,
     })
+
+
+def mining_dashboard(request):
+    """Hidden mining analytics dashboard - only accessible via direct URL"""
+    from django.db.models import Sum, Count, Avg, F, Q
+    from django.db.models.functions import TruncDate, TruncHour
+    
+    # Get current user's wallet address
+    current_wallet_address = getattr(request, 'wallet_address', None)
+    
+    # Get all miners with their comprehensive statistics
+    miners_stats = ArbiusImage.objects.values('solution_provider').annotate(
+        total_tasks_completed=Count('id'),
+        first_task=Min('timestamp'),
+        last_task=Max('timestamp')
+    ).filter(
+        solution_provider__isnull=False
+    ).exclude(
+        solution_provider='0x0000000000000000000000000000000000000000'
+    ).order_by('-total_tasks_completed')
+    
+    # Get token earnings data
+    token_earnings_data = {}
+    try:
+        from .models import MinerTokenEarnings
+        earnings_queryset = MinerTokenEarnings.objects.all()
+        for earnings in earnings_queryset:
+            token_earnings_data[earnings.miner_address.lower()] = earnings
+    except Exception as e:
+        logger.warning(f"Error fetching token earnings: {e}")
+    
+    # Enhanced miner statistics with all required data
+    total_aius_earned_all = 0
+    total_usd_sold_all = 0
+    
+    for miner in miners_stats:
+        miner['display_name'] = get_display_name_for_wallet(miner['solution_provider'])
+        miner['short_address'] = f"{miner['solution_provider'][:8]}...{miner['solution_provider'][-8:]}"
+        
+        # Format dates
+        if miner['first_task']:
+            miner['first_task_formatted'] = miner['first_task'].strftime('%Y-%m-%d')
+        else:
+            miner['first_task_formatted'] = 'N/A'
+            
+        if miner['last_task']:
+            miner['last_task_formatted'] = miner['last_task'].strftime('%Y-%m-%d')
+        else:
+            miner['last_task_formatted'] = 'N/A'
+        
+        # Get token earnings data for this miner
+        miner_key = miner['solution_provider'].lower()
+        token_earnings = token_earnings_data.get(miner_key)
+        
+        if token_earnings:
+            miner['aius_earned'] = float(token_earnings.total_aius_earned)
+            miner['usd_from_sales'] = float(token_earnings.total_usd_from_sales)
+            miner['has_real_earnings'] = True
+            miner['last_analyzed'] = token_earnings.last_analyzed
+            
+            total_aius_earned_all += miner['aius_earned']
+            total_usd_sold_all += miner['usd_from_sales']
+        else:
+            # No token data yet - needs analysis
+            miner['aius_earned'] = 0
+            miner['usd_from_sales'] = 0
+            miner['has_real_earnings'] = False
+            miner['last_analyzed'] = None
+    
+    # Get basic network statistics
+    total_tasks = ArbiusImage.objects.count()
+    
+    # Get recent mining activity with prompts
+    recent_mining_activity = ArbiusImage.objects.filter(
+        solution_provider__isnull=False
+    ).exclude(
+        solution_provider='0x0000000000000000000000000000000000000000'
+    ).select_related().order_by('-timestamp')[:20]
+    
+    # Add display names and format prompts for recent activity
+    for activity in recent_mining_activity:
+        activity.miner_display_name = get_display_name_for_wallet(activity.solution_provider)
+        activity.submitter_display_name = get_display_name_for_wallet(activity.task_submitter)
+        # Truncate prompt if too long
+        if activity.prompt and len(activity.prompt) > 50:
+            activity.prompt_short = activity.prompt[:50] + "..."
+        else:
+            activity.prompt_short = activity.prompt or "N/A"
+    
+    # Check if we have any token earnings data at all
+    has_token_data = len(token_earnings_data) > 0
+    
+    context = {
+        'miners_stats': miners_stats,
+        'total_tasks': total_tasks,
+        'total_aius_earned': total_aius_earned_all,
+        'total_usd_sold': total_usd_sold_all,
+        'recent_mining_activity': recent_mining_activity,
+        'has_token_data': has_token_data,
+        'wallet_address': current_wallet_address,
+        'user_profile': getattr(request, 'user_profile', None),
+    }
+    
+    return render(request, 'playground/mining_dashboard.html', context)
