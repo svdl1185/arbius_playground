@@ -26,12 +26,12 @@
   .playground-root {
     display: flex;
     flex-direction: row;
-    height: calc(100vh - 80px) !important; /* Account for navbar height */
+    height: calc(100vh - 64px) !important; /* Account for navbar height */
     min-height: 0 !important;
     background: #0a0a0a;
     width: 100%;
     overflow: hidden !important;
-    margin-top: 80px; /* Add top margin for navbar */
+    margin-top: 64px; /* Add margin for navbar */
   }
   .sidebar { 
     width: 260px; 
@@ -533,86 +533,6 @@
   .sidebar .filter-pills, .sidebar .history-list {
     font-size: 0.85rem;
   }
-  .wallet-btn-outline, .navbar-wallet .wallet-btn-outline, #connect-wallet-btn, #connect-wallet-btn-mobile {
-    background: #fff !important;
-    color: #181828 !important;
-    border: none !important;
-    box-shadow: none !important;
-    border-radius: 999px !important;
-    font-size: 0.95rem !important;
-    font-weight: 500 !important;
-    padding: 6px 22px !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-    height: auto !important;
-    display: inline-flex;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 0 !important;
-  }
-  .navbar-wallet {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .wallet-connected-dropdown {
-    display: inline-block;
-    position: relative;
-    vertical-align: middle;
-  }
-  .wallet-address-pill {
-    background: transparent;
-    color: #fff;
-    border: 2px solid #fff;
-    border-radius: 999px;
-    font-size: 0.95rem;
-    font-weight: 500;
-    padding: 6px 22px;
-    min-width: 0;
-    min-height: 0;
-    height: auto;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    margin-bottom: 6px;
-    transition: border 0.2s, background 0.2s;
-  }
-  .wallet-address-pill:hover, .wallet-address-pill:focus {
-    background: rgba(255,255,255,0.08);
-    border-color: #fff;
-  }
-  .wallet-dropdown-menu {
-    position: absolute;
-    top: 110%;
-    left: 0;
-    background: #232a3a;
-    border-radius: 18px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
-    padding: 22px 0 18px 0;
-    min-width: 210px;
-    z-index: 2000;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .wallet-dropdown-item {
-    color: #fff;
-    text-decoration: none;
-    font-size: 1.08rem;
-    padding: 12px 28px 12px 22px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    border: none;
-    background: none;
-    cursor: pointer;
-    transition: background 0.15s;
-    border-radius: 12px;
-  }
-  .wallet-dropdown-item:hover {
-    background: #2e3542;
-  }
   @media (max-width: 768px) {
     .playground-root {
       flex-direction: column;
@@ -681,42 +601,7 @@
 {% endblock %}
 
 {% block content %}
-<!-- Navigation -->
-<nav class="nav-glass w-full fixed top-0 z-30 transition-all duration-300">
-  <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 flex items-center justify-between h-16 relative">
-    <!-- Logo and Name on Left -->
-    <div class="flex items-center justify-start gap-2 pl-2 py-2">
-      <a href="{% url 'home' %}" class="flex items-center gap-2 font-bold text-lg sm:text-2xl text-white">
-        <img src="{% static 'arbius.ef337b97.svg' %}" alt="Arbius Logo" class="inline-block w-7 h-7 sm:w-8 sm:h-8" />
-        <span>Arbius</span>
-      </a>
-    </div>
-    
-    <!-- Wallet/Actions on Right -->
-    <div class="flex items-center gap-3">
-      <!-- Network Status Indicator -->
-      <div class="flex items-center gap-2 mr-2" id="network-status-container" style="display: none;">
-        <div id="network-status-indicator" class="w-2 h-2 rounded-full bg-gray-500" title="Network Status"></div>
-        <span id="network-status-text" class="text-gray-500 text-xs">Status Unknown</span>
-      </div>
-      
-      <!-- Desktop Wallet Section -->
-      <div class="navbar-wallet">
-        <button id="connect-wallet-btn" class="wallet-btn-outline">Connect</button>
-        <div id="wallet-connected-container" class="wallet-connected-dropdown" style="display:none;position:relative;">
-          <button id="navbar-wallet-address-pill" class="wallet-address-pill">@wallet</button>
-          <div id="navbar-wallet-dropdown-menu" class="wallet-dropdown-menu" style="display:none;">
-            <a href="#" class="wallet-dropdown-item"><img src="https://arbiscan.io/images/svg/brands/arbitrum.svg" style="width:18px;height:18px;vertical-align:middle;margin-right:8px;">Arbiscan</a>
-            <a href="#" class="wallet-dropdown-item"><i class="fas fa-chart-pie" style="width:18px;margin-right:8px;"></i>Usage</a>
-            <button id="disconnect-wallet-btn" class="wallet-dropdown-item"><i class="fas fa-unlink" style="width:18px;margin-right:8px;"></i>Disconnect</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</nav>
-
-<div class="playground-root" style="margin-top: 64px;">
+<div class="playground-root">
   <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
     <button class="sidebar-toggle-btn" id="sidebar-toggle-btn">
@@ -1090,22 +975,8 @@ function isChatEmpty() {
   return !chatArea.querySelector('.chat-message-row');
 }
 // Hide model select if a message is sent (optional: you can also call this after sending a message)
-// Wallet dropdown logic (guaranteed to run after DOM and after all other JS)
+// Auto-expand chat input textarea
 document.addEventListener('DOMContentLoaded', function() {
-  const walletAddressPill = document.getElementById('navbar-wallet-address-pill');
-  const walletDropdownMenu = document.getElementById('navbar-wallet-dropdown-menu');
-  if (walletAddressPill && walletDropdownMenu) {
-    walletAddressPill.addEventListener('click', function(e) {
-      e.stopPropagation();
-      walletDropdownMenu.style.display = walletDropdownMenu.style.display === 'block' ? 'none' : 'block';
-    });
-    document.addEventListener('click', function(e) {
-      if (!walletDropdownMenu.contains(e.target) && e.target !== walletAddressPill) {
-        walletDropdownMenu.style.display = 'none';
-      }
-    });
-  }
-  // Auto-expand chat input textarea
   const textarea = document.querySelector('.chat-input-inner textarea');
   if (textarea) {
     textarea.addEventListener('input', function() {
@@ -1116,22 +987,6 @@ document.addEventListener('DOMContentLoaded', function() {
     textarea.dispatchEvent(new Event('input'));
   }
 });
-// Ensure dropdown matches wallet button width
-(function() {
-  const pill = document.getElementById('navbar-wallet-address-pill');
-  const dropdown = document.getElementById('navbar-wallet-dropdown-menu');
-  if (pill && dropdown) {
-    function setDropdownWidth() {
-      dropdown.style.minWidth = pill.offsetWidth + 'px';
-    }
-    pill.addEventListener('click', function() {
-      setDropdownWidth();
-    });
-    window.addEventListener('resize', function() {
-      if (dropdown.style.display === 'block') setDropdownWidth();
-    });
-  }
-})();
 
 // Toast utility for consistent notifications
 function showToast(message, type = 'error') {
