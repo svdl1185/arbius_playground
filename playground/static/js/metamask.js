@@ -108,6 +108,9 @@ class MetaMaskManager {
             this.setupEventListeners();
             await this.checkBackendAuthStatus(); // Only trust backend
             
+            // Initialize dropdown functionality
+            this.initializeWalletDropdowns();
+            
             // Check network status periodically if connected
             if (this.isConnected) {
                 await this.updateNetworkStatusUI();
@@ -273,23 +276,23 @@ class MetaMaskManager {
         
         if (loading) {
             if (connectBtn) {
-                connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
+                connectBtn.innerHTML = 'Connecting...';
                 connectBtn.disabled = true;
                 connectBtn.classList.add('opacity-75', 'cursor-not-allowed');
             }
             if (connectBtnMobile) {
-                connectBtnMobile.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
+                connectBtnMobile.innerHTML = 'Connecting...';
                 connectBtnMobile.disabled = true;
                 connectBtnMobile.classList.add('opacity-75', 'cursor-not-allowed');
             }
         } else {
             if (connectBtn) {
-                connectBtn.innerHTML = '<i class="fas fa-wallet"></i> Connect Wallet';
+                connectBtn.innerHTML = 'Connect';
                 connectBtn.disabled = false;
                 connectBtn.classList.remove('opacity-75', 'cursor-not-allowed');
             }
             if (connectBtnMobile) {
-                connectBtnMobile.innerHTML = '<i class="fas fa-wallet"></i> Connect';
+                connectBtnMobile.innerHTML = 'Connect';
                 connectBtnMobile.disabled = false;
                 connectBtnMobile.classList.remove('opacity-75', 'cursor-not-allowed');
             }
@@ -538,57 +541,64 @@ class MetaMaskManager {
         const disconnectBtn = document.getElementById('disconnect-wallet-btn');
         const disconnectBtnMobile = document.getElementById('disconnect-wallet-btn-mobile');
         const walletConnectedContainer = document.getElementById('wallet-connected-container');
-        const walletAddressPill = document.getElementById('wallet-address-pill');
+        const walletConnectedMobile = document.getElementById('wallet-connected-mobile');
         const walletDropdownMenu = document.getElementById('wallet-dropdown-menu');
-        const networkStatusContainer = document.getElementById('network-status-container');
+        const walletDropdownMenuMobile = document.getElementById('wallet-dropdown-menu-mobile');
         
         // Hide all by default
         if (connectBtn) connectBtn.style.display = 'inline-flex';
+        if (connectBtnMobile) connectBtnMobile.style.display = 'inline-flex';
         if (walletConnectedContainer) walletConnectedContainer.style.display = 'none';
-        if (networkStatusContainer) networkStatusContainer.style.display = 'none';
+        if (walletConnectedMobile) walletConnectedMobile.style.display = 'none';
         
         // Show correct UI
         if (this.isConnected && this.account) {
             if (connectBtn) connectBtn.style.display = 'none';
-            if (walletConnectedContainer) walletConnectedContainer.style.display = 'inline-block';
-            if (networkStatusContainer) networkStatusContainer.style.display = 'flex';
+            if (connectBtnMobile) connectBtnMobile.style.display = 'none';
+            if (walletConnectedContainer) walletConnectedContainer.style.display = 'block';
+            if (walletConnectedMobile) walletConnectedMobile.style.display = 'block';
             
-            // Update wallet pill for playground
-            const navbarWalletPill = document.getElementById('navbar-wallet-address-pill');
-            if (navbarWalletPill) {
-                navbarWalletPill.textContent = `@${this.account.slice(0, 6)}...${this.account.slice(-4)}`;
-                navbarWalletPill.title = this.account;
-            }
-            // Update wallet pill for homepage
-            const homeWalletPill = document.getElementById('wallet-address-pill');
-            if (homeWalletPill) {
-                homeWalletPill.textContent = `@${this.account.slice(0, 6)}...${this.account.slice(-4)}`;
-                homeWalletPill.title = this.account;
-            }
-            // Set Arbiscan link
-            const arbiscanLink = document.querySelector('.wallet-dropdown-item[href^="https://arbiscan.io"]') || document.querySelector('.wallet-dropdown-item[href="#"]');
-            if (arbiscanLink) {
-                arbiscanLink.href = `https://arbiscan.io/address/${this.account}`;
-                arbiscanLink.target = '_blank';
-                arbiscanLink.rel = 'noopener noreferrer';
-            }
+            // Update wallet address pills
+            const walletAddressPill = document.getElementById('wallet-address-pill');
+            const walletAddressPillMobile = document.getElementById('wallet-address-pill-mobile');
+            
+            const truncatedAddress = `@${this.account.slice(0, 6)}...${this.account.slice(-4)}`;
+            
+            if (walletAddressPill) walletAddressPill.textContent = truncatedAddress;
+            if (walletAddressPillMobile) walletAddressPillMobile.textContent = truncatedAddress;
+            
+            // Update Arbiscan links
+            const arbiscanLinks = document.querySelectorAll('.wallet-dropdown-item[href="#"]');
+            const arbiscanUrl = `https://arbiscan.io/address/${this.account}`;
+            
+            arbiscanLinks.forEach(link => {
+                if (link.querySelector('img[src*="arbiscan.io"]')) {
+                    link.href = arbiscanUrl;
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                }
+            });
+            
+            // Update Usage links (link to dashboard)
+            const usageLinks = document.querySelectorAll('.wallet-dropdown-item[href="#"]');
+            const usageUrl = '/dashboard/';
+            
+            usageLinks.forEach(link => {
+                if (link.querySelector('.fas.fa-chart-pie')) {
+                    link.href = usageUrl;
+                }
+            });
             
             // Update network status if connected
             await this.updateNetworkStatusUI();
         }
-        // Hide dropdown menu by default
+        
+        // Hide dropdown menus by default
         if (walletDropdownMenu) walletDropdownMenu.style.display = 'none';
-
-        const walletAddressSpan = document.getElementById('wallet-address');
-        if (walletAddressSpan) {
-            if (this.account) {
-                console.log('[MetaMask Debug] Setting wallet address:', this.account);
-                walletAddressSpan.textContent = this.account;
-            } else {
-                console.log('[MetaMask Debug] No wallet address found');
-                walletAddressSpan.textContent = '[No address]';
-            }
-        }
+        if (walletDropdownMenuMobile) walletDropdownMenuMobile.style.display = 'none';
+        
+        // Re-initialize dropdown functionality after UI update
+        this.initializeWalletDropdowns();
     }
 
     showMetaMaskNotInstalled() {
@@ -709,6 +719,55 @@ class MetaMaskManager {
             console.error('Error checking network status:', error);
             return { isPaused: false, error: 'Network status check failed' };
         }
+    }
+
+    initializeWalletDropdowns() {
+        // Desktop dropdown
+        const walletAddressPill = document.getElementById('wallet-address-pill');
+        const walletDropdownMenu = document.getElementById('wallet-dropdown-menu');
+        
+        if (walletAddressPill && walletDropdownMenu) {
+            // Remove existing listeners to prevent duplicates
+            walletAddressPill.removeEventListener('click', walletAddressPill._dropdownHandler);
+            
+            walletAddressPill._dropdownHandler = (e) => {
+                e.stopPropagation();
+                walletDropdownMenu.style.display = walletDropdownMenu.style.display === 'block' ? 'none' : 'block';
+            };
+            
+            walletAddressPill.addEventListener('click', walletAddressPill._dropdownHandler);
+        }
+        
+        // Mobile dropdown
+        const walletAddressPillMobile = document.getElementById('wallet-address-pill-mobile');
+        const walletDropdownMenuMobile = document.getElementById('wallet-dropdown-menu-mobile');
+        
+        if (walletAddressPillMobile && walletDropdownMenuMobile) {
+            // Remove existing listeners to prevent duplicates
+            walletAddressPillMobile.removeEventListener('click', walletAddressPillMobile._dropdownHandler);
+            
+            walletAddressPillMobile._dropdownHandler = (e) => {
+                e.stopPropagation();
+                walletDropdownMenuMobile.style.display = walletDropdownMenuMobile.style.display === 'block' ? 'none' : 'block';
+            };
+            
+            walletAddressPillMobile.addEventListener('click', walletAddressPillMobile._dropdownHandler);
+        }
+        
+        // Close dropdowns when clicking outside
+        const closeDropdownsHandler = (e) => {
+            if (walletDropdownMenu && !walletDropdownMenu.contains(e.target) && e.target !== walletAddressPill) {
+                walletDropdownMenu.style.display = 'none';
+            }
+            if (walletDropdownMenuMobile && !walletDropdownMenuMobile.contains(e.target) && e.target !== walletAddressPillMobile) {
+                walletDropdownMenuMobile.style.display = 'none';
+            }
+        };
+        
+        // Remove existing listener to prevent duplicates
+        document.removeEventListener('click', document._closeDropdownsHandler);
+        document._closeDropdownsHandler = closeDropdownsHandler;
+        document.addEventListener('click', closeDropdownsHandler);
     }
 
     async submitTask(customParams = {}) {
@@ -1113,21 +1172,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (window.metaMaskManager) {
                 await window.metaMaskManager.submitTask({ customPrompt: userPrompt });
-            }
-        });
-    }
-
-    // Wallet dropdown logic (ensure only one menu is open at a time)
-    const walletAddressPill = document.getElementById('wallet-address-pill');
-    const walletDropdownMenu = document.getElementById('wallet-dropdown-menu');
-    if (walletAddressPill && walletDropdownMenu) {
-        walletAddressPill.addEventListener('click', (e) => {
-            e.stopPropagation();
-            walletDropdownMenu.style.display = walletDropdownMenu.style.display === 'block' ? 'none' : 'block';
-        });
-        document.addEventListener('click', (e) => {
-            if (!walletDropdownMenu.contains(e.target) && e.target !== walletAddressPill) {
-                walletDropdownMenu.style.display = 'none';
             }
         });
     }
