@@ -120,6 +120,17 @@ class ArbiusImage(models.Model):
             return False
         return self.upvotes.filter(wallet_address__iexact=wallet_address).exists()
 
+    @property
+    def reactions(self):
+        """Return a dictionary of emoji reactions for this image."""
+        from django.db.models import Count
+        reactions_data = {}
+        for emoji, _ in ImageReaction.EMOJI_CHOICES:
+            count = self.reactions.filter(emoji=emoji).count()
+            if count > 0:
+                reactions_data[emoji] = count
+        return reactions_data
+
 
 class UserProfile(models.Model):
     """User profile linked to wallet address"""
@@ -203,6 +214,53 @@ class ImageComment(models.Model):
     def short_content(self):
         """Return a shortened version of the comment content"""
         return self.content[:100] + "..." if len(self.content) > 100 else self.content
+
+
+class ImageReaction(models.Model):
+    """Track emoji reactions on images"""
+    EMOJI_CHOICES = [
+        ('❤️', 'Heart'),
+        ('😂', 'Laugh'),
+        ('😮', 'Wow'),
+        ('😢', 'Sad'),
+        ('👍', 'Thumbs Up'),
+        ('👎', 'Thumbs Down'),
+        ('🔥', 'Fire'),
+        ('💯', '100'),
+    ]
+    
+    image = models.ForeignKey(ArbiusImage, on_delete=models.CASCADE, related_name='reactions')
+    wallet_address = models.CharField(max_length=42, db_index=True)
+    emoji = models.CharField(max_length=10, choices=EMOJI_CHOICES)
+    created_at = models.DateTimeField(default=timezone.now)
+    
+    class Meta:
+        unique_together = ['image', 'wallet_address', 'emoji']  # Prevent duplicate reactions
+        indexes = [
+            models.Index(fields=['wallet_address']),
+            models.Index(fields=['created_at']),
+            models.Index(fields=['emoji']),
+        ]
+    
+    def __str__(self):
+        return f"{self.emoji} reaction by {self.wallet_address[:10]}... on {self.image.short_cid}"
+
+
+class ImageUpvote(models.Model):
+    """Track upvotes on images"""
+    image = models.ForeignKey(ArbiusImage, on_delete=models.CASCADE, related_name='upvotes')
+    wallet_address = models.CharField(max_length=42, db_index=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    
+    class Meta:
+        unique_together = ['image', 'wallet_address']  # Prevent duplicate votes
+        indexes = [
+            models.Index(fields=['wallet_address']),
+            models.Index(fields=['created_at']),
+        ]
+    
+    def __str__(self):
+        return f"Upvote by {self.wallet_address[:10]}... on {self.image.short_cid}"
 
 
 class ScanStatus(models.Model):

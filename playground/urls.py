@@ -10,6 +10,7 @@ urlpatterns = [
     path('api/check-auth-status/', views.check_auth_status, name='check_auth_status'),
     path('api/logout-wallet/', views.logout_wallet, name='logout_wallet'),
     path('api/image/<int:image_id>/upvote/', views.toggle_upvote, name='toggle_upvote'),
+    path('api/image/<int:image_id>/reaction/', views.toggle_reaction, name='toggle_reaction'),
     path('api/image/<int:image_id>/comment/', views.add_comment, name='add_comment'),
     path('api/gallery/images/', views.gallery_images_api, name='gallery_images_api'),
     

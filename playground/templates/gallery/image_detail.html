@@ -36,25 +36,21 @@
                 <div class="bg-cardbg border border-border rounded-2xl p-6">
                     <div class="flex items-center justify-between mb-4">
                         <div class="flex items-center space-x-6">
-                            <button class="upvote-btn flex items-center space-x-3 px-4 py-2 rounded-xl border border-border hover:border-white/20 transition-all duration-200 {% if wallet_address %}cursor-pointer hover:bg-white/5{% endif %}{% if user_has_upvoted %} bg-red-500/10 border-red-500/30 text-red-400{% else %} text-textmuted{% endif %}" 
-                                    data-image-id="{{ image.id }}" 
-                                    {% if not wallet_address %}disabled title="Connect wallet to upvote"{% endif %}>
-                                {% if user_has_upvoted %}
-                                    <i class="fas fa-heart"></i>
-                                {% else %}
-                                    <i class="far fa-heart"></i>
-                                {% endif %}
-                                <span class="font-medium">Upvote</span>
-                                <span class="upvote-count bg-white/10 px-2 py-1 rounded text-sm">{{ image.upvote_count|default:0 }}</span>
-                            </button>
-                            
+                            <!-- Emoji Reactions -->
+                            <div class="flex space-x-1 bg-black/60 rounded-full px-2 py-1 reactions-container">
+                                {% for emoji, count in image.reactions.items %}
+                                    <span class="emoji-reaction cursor-pointer hover:scale-110 transition-transform text-lg" data-image-id="{{ image.id }}" data-emoji="{{ emoji }}">
+                                        {{ emoji }} <span class="ml-1 text-xs">{{ count }}</span>
+                                    </span>
+                                {% endfor %}
+                                <span class="emoji-add cursor-pointer hover:scale-110 transition-transform text-lg" data-image-id="{{ image.id }}" title="Add reaction">➕</span>
+                            </div>
                             <div class="flex items-center space-x-3 text-textmuted">
                                 <i class="fas fa-comment"></i>
                                 <span class="font-medium">Comments</span>
                                 <span class="bg-white/10 px-2 py-1 rounded text-sm">{{ image.comment_count|default:0 }}</span>
                             </div>
                         </div>
-                        
                         <div class="text-sm text-textmuted">
                             <i class="fas fa-calendar mr-2"></i>
                             {{ image.timestamp|date:"M d, Y" }}
@@ -82,7 +78,7 @@
                         </form>
                     {% else %}
                         <div class="text-center py-4">
-                            <p class="text-textmuted">Connect your wallet to comment on this image.</p>
+                            <p class="text-textmuted">Connect your wallet to comment or react on this image.</p>
                         </div>
                     {% endif %}
                 </div>
@@ -177,53 +173,149 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Handle upvote clicks
-    const upvoteBtn = document.querySelector('.upvote-btn');
-    if (upvoteBtn) {
-        upvoteBtn.addEventListener('click', function(e) {
+    // Emoji Reaction Logic (same as gallery)
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('emoji-reaction')) {
             e.preventDefault();
+            e.stopPropagation();
             
-            const imageId = this.dataset.imageId;
-            const isDisabled = this.hasAttribute('disabled');
+            const imageId = e.target.dataset.imageId;
+            const emoji = e.target.dataset.emoji;
+            const isDisabled = !('{{ wallet_address }}' && '{{ wallet_address }}' !== 'None');
             
             if (isDisabled) {
-                alert('Please connect your wallet to upvote images.');
+                alert('Please connect your wallet to react to images.');
                 return;
             }
             
-            fetch(`/api/image/${imageId}/upvote/`, {
+            fetch(`/api/image/${imageId}/reaction/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                }
+                },
+                body: JSON.stringify({ emoji: emoji })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    const icon = this.querySelector('i');
-                    const count = this.querySelector('.upvote-count');
-                    
-                    if (data.action === 'added') {
-                        icon.className = 'fas fa-heart';
-                        this.classList.add('bg-red-500/10', 'border-red-500/30', 'text-red-400');
-                        this.classList.remove('text-textmuted');
-                    } else {
-                        icon.className = 'far fa-heart';
-                        this.classList.remove('bg-red-500/10', 'border-red-500/30', 'text-red-400');
-                        this.classList.add('text-textmuted');
+                    // Update the reactions display
+                    const reactionsContainer = e.target.closest('.reactions-container');
+                    if (reactionsContainer) {
+                        updateReactionsDisplay(reactionsContainer, data.reactions, imageId);
                     }
-                    
-                    count.textContent = data.upvote_count;
                 } else {
                     alert('Error: ' + data.error);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred while upvoting.');
+                alert('An error occurred while reacting.');
             });
+        }
+        
+        // Handle add reaction button clicks
+        if (e.target.classList.contains('emoji-add')) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const imageId = e.target.dataset.imageId;
+            const isDisabled = !('{{ wallet_address }}' && '{{ wallet_address }}' !== 'None');
+            
+            if (isDisabled) {
+                alert('Please connect your wallet to react to images.');
+                return;
+            }
+            
+            // Show emoji picker
+            showEmojiPicker(e.target, imageId);
+        }
+    });
+
+    function showEmojiPicker(button, imageId) {
+        // Remove any existing picker
+        const existingPicker = document.querySelector('.emoji-picker');
+        if (existingPicker) {
+            existingPicker.remove();
+        }
+        
+        // Create emoji picker
+        const picker = document.createElement('div');
+        picker.className = 'emoji-picker absolute bg-black/80 rounded-lg p-2 z-20';
+        picker.style.top = (button.offsetTop - 50) + 'px';
+        picker.style.left = (button.offsetLeft - 100) + 'px';
+        
+        const emojis = ['❤️', '😂', '😮', '😢', '👍', '👎', '🔥', '💯'];
+        emojis.forEach(emoji => {
+            const emojiBtn = document.createElement('span');
+            emojiBtn.className = 'emoji-picker-option cursor-pointer text-xl mx-1 hover:scale-125 transition-transform';
+            emojiBtn.textContent = emoji;
+            emojiBtn.onclick = () => addReaction(imageId, emoji, picker);
+            picker.appendChild(emojiBtn);
         });
+        
+        button.parentElement.appendChild(picker);
+        
+        // Close picker when clicking outside
+        setTimeout(() => {
+            document.addEventListener('click', function closePicker(e) {
+                if (!picker.contains(e.target) && !button.contains(e.target)) {
+                    picker.remove();
+                    document.removeEventListener('click', closePicker);
+                }
+            });
+        }, 100);
+    }
+
+    function addReaction(imageId, emoji, picker) {
+        fetch(`/api/image/${imageId}/reaction/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({ emoji: emoji })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the reactions display
+                const reactionsContainer = picker.closest('.reactions-container');
+                if (reactionsContainer) {
+                    updateReactionsDisplay(reactionsContainer, data.reactions, imageId);
+                }
+                picker.remove();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while reacting.');
+        });
+    }
+
+    function updateReactionsDisplay(container, reactions, imageId) {
+        // Clear existing reactions
+        container.innerHTML = '';
+        
+        // Add each reaction
+        Object.entries(reactions).forEach(([emoji, count]) => {
+            const reactionSpan = document.createElement('span');
+            reactionSpan.className = 'emoji-reaction cursor-pointer hover:scale-110 transition-transform text-lg';
+            reactionSpan.dataset.imageId = imageId;
+            reactionSpan.dataset.emoji = emoji;
+            reactionSpan.innerHTML = `${emoji} <span class="ml-1 text-xs">${count}</span>`;
+            container.appendChild(reactionSpan);
+        });
+        
+        // Add the add reaction button back
+        const addButton = document.createElement('span');
+        addButton.className = 'emoji-add cursor-pointer hover:scale-110 transition-transform text-lg';
+        addButton.dataset.imageId = imageId;
+        addButton.title = 'Add reaction';
+        addButton.textContent = '➕';
+        container.appendChild(addButton);
     }
 
     // Handle comment form submission

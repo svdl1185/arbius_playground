@@ -19,7 +19,7 @@ import re
 import time
 from eth_account.messages import encode_defunct
 from web3 import Web3
-from .models import Wallet, ArbiusImage, UserProfile, ImageUpvote, ImageComment, MinerAddress
+from .models import Wallet, ArbiusImage, UserProfile, ImageUpvote, ImageComment, MinerAddress, ImageReaction
 from django.core import serializers
 
 # Set up logging
@@ -171,6 +171,72 @@ def get_available_models_with_categories():
     
     return filtered_models, categorized
 
+def get_popular_keywords(exclude_automine=True, limit=20):
+    """Get the most popular keywords from image prompts, excluding miner images"""
+    from collections import Counter
+    import re
+    
+    # Get base queryset
+    queryset = get_base_queryset(exclude_automine=exclude_automine)
+    
+    # Get all prompts
+    prompts = queryset.exclude(prompt__isnull=True).exclude(prompt='').values_list('prompt', flat=True)
+    
+    # Extract meaningful keywords (focus on nouns, proper nouns, and specific terms)
+    keywords = []
+    for prompt in prompts:
+        # Clean the prompt
+        clean_prompt = prompt.lower()
+        
+        # Remove the "Additional instruction" text that gets appended
+        if "additional instruction:" in clean_prompt:
+            clean_prompt = re.sub(r'additional instruction:.*?(?=\s|$)', '', clean_prompt, flags=re.IGNORECASE)
+        
+        # Extract words that are likely to be meaningful keywords
+        # Look for capitalized words (proper nouns), words with underscores (tags), and specific patterns
+        meaningful_words = []
+        
+        # Extract capitalized words (proper nouns like "Pikachu", "Dragon", etc.)
+        capitalized_words = re.findall(r'\b[A-Z][a-z]+\b', prompt)
+        meaningful_words.extend(capitalized_words)
+        
+        # Extract words with underscores (common in AI art prompts like "blue_hair", "dragon_scale")
+        underscore_words = re.findall(r'\b[a-z]+_[a-z]+\b', clean_prompt)
+        meaningful_words.extend(underscore_words)
+        
+        # Extract specific character names and objects (look for patterns)
+        # Common anime/game character patterns
+        character_patterns = [
+            r'\b(pikachu|charizard|bulbasaur|squirtle|misty|ash|goku|naruto|sasuke|link|zelda|mario|luigi|peach|bowser)\b',
+            r'\b(dragon|phoenix|unicorn|griffin|dragon|wizard|witch|knight|princess|prince|queen|king)\b',
+            r'\b(robot|cyborg|android|mecha|gundam|evangelion|transformers)\b',
+            r'\b(cat|dog|wolf|fox|bear|tiger|lion|elephant|giraffe|penguin|owl|eagle)\b',
+            r'\b(castle|tower|bridge|forest|mountain|ocean|desert|jungle|space|planet|star|moon|sun)\b',
+            r'\b(sword|shield|bow|arrow|gun|laser|lightsaber|magic|spell|fire|ice|lightning|thunder)\b',
+            r'\b(car|bike|plane|ship|spaceship|rocket|train|bus|helicopter)\b',
+            r'\b(flower|tree|grass|leaf|rose|tulip|sunflower|cherry|apple|orange|banana)\b',
+        ]
+        
+        for pattern in character_patterns:
+            matches = re.findall(pattern, clean_prompt, re.IGNORECASE)
+            meaningful_words.extend(matches)
+        
+        # Extract words that are 4+ characters and not common stop words
+        # This catches other meaningful terms
+        longer_words = re.findall(r'\b[a-z]{4,}\b', clean_prompt)
+        stop_words = {'this', 'that', 'with', 'have', 'will', 'from', 'they', 'know', 'want', 'been', 'good', 'much', 'some', 'time', 'very', 'when', 'come', 'just', 'into', 'than', 'more', 'other', 'about', 'many', 'then', 'them', 'these', 'people', 'only', 'well', 'even', 'back', 'after', 'use', 'two', 'how', 'our', 'work', 'first', 'over', 'think', 'also', 'your', 'could', 'would', 'there', 'their', 'what', 'said', 'each', 'which', 'she', 'do', 'how', 'if', 'will', 'up', 'out', 'many', 'then', 'them', 'these', 'so', 'some', 'her', 'would', 'make', 'like', 'into', 'him', 'time', 'has', 'two', 'more', 'go', 'no', 'way', 'could', 'my', 'than', 'first', 'been', 'call', 'who', 'its', 'now', 'find', 'long', 'down', 'day', 'did', 'get', 'come', 'made', 'may', 'part', 'over', 'new', 'sound', 'take', 'only', 'little', 'work', 'know', 'place', 'year', 'live', 'me', 'back', 'give', 'most', 'very', 'after', 'thing', 'our', 'just', 'name', 'good', 'sentence', 'man', 'think', 'say', 'great', 'where', 'help', 'through', 'much', 'before', 'line', 'right', 'too', 'mean', 'old', 'any', 'same', 'tell', 'boy', 'follow', 'came', 'want', 'show', 'also', 'around', 'form', 'three', 'small', 'set', 'put', 'end', 'does', 'another', 'well', 'large', 'must', 'big', 'even', 'such', 'because', 'turn', 'here', 'why', 'ask', 'went', 'men', 'read', 'need', 'land', 'different', 'home', 'us', 'move', 'try', 'kind', 'hand', 'picture', 'again', 'change', 'off', 'play', 'spell', 'air', 'away', 'animal', 'house', 'point', 'page', 'letter', 'mother', 'answer', 'found', 'study', 'still', 'learn', 'should', 'America', 'world', 'high', 'every', 'near', 'add', 'food', 'between', 'own', 'below', 'country', 'plant', 'last', 'school', 'father', 'keep', 'tree', 'never', 'start', 'city', 'earth', 'eye', 'light', 'thought', 'head', 'under', 'story', 'saw', 'left', 'don', 'few', 'while', 'along', 'might', 'close', 'something', 'seem', 'next', 'hard', 'open', 'example', 'begin', 'life', 'always', 'those', 'both', 'paper', 'together', 'got', 'group', 'often', 'run', 'important', 'until', 'children', 'side', 'feet', 'car', 'mile', 'night', 'walk', 'white', 'sea', 'began', 'grow', 'took', 'river', 'four', 'carry', 'state', 'once', 'book', 'hear', 'stop', 'without', 'second', 'late', 'miss', 'idea', 'enough', 'eat', 'face', 'watch', 'far', 'Indian', 'real', 'almost', 'let', 'above', 'girl', 'sometimes', 'mountain', 'cut', 'young', 'talk', 'soon', 'list', 'song', 'being', 'leave', 'family', 'it', 'body', 'music', 'color', 'stand', 'sun', 'questions', 'fish', 'area', 'mark', 'dog', 'horse', 'birds', 'problem', 'complete', 'room', 'knew', 'since', 'ever', 'piece', 'told', 'usually', 'didn', 'friends', 'easy', 'heard', 'order', 'red', 'door', 'sure', 'become', 'top', 'ship', 'across', 'today', 'during', 'short', 'better', 'best', 'however', 'low', 'hours', 'black', 'products', 'happened', 'whole', 'measure', 'remember', 'early', 'waves', 'reached', 'listen', 'wind', 'rock', 'space', 'covered', 'fast', 'several', 'hold', 'himself', 'toward', 'five', 'step', 'morning', 'passed', 'vowel', 'true', 'hundred', 'against', 'pattern', 'numeral', 'table', 'north', 'slowly', 'money', 'map', 'farm', 'pulled', 'draw', 'voice', 'seen', 'cold', 'cried', 'plan', 'notice', 'south', 'sing', 'war', 'ground', 'fall', 'king', 'town', 'I', 'unit', 'figure', 'certain', 'field', 'travel', 'wood', 'fire', 'upon'}
+        meaningful_words.extend([word for word in longer_words if word not in stop_words])
+        
+        # Add to keywords list
+        keywords.extend(meaningful_words)
+    
+    # Count and return most common
+    keyword_counts = Counter(keywords)
+    # Filter out very short keywords and return the most common ones
+    meaningful_keywords = [(keyword, count) for keyword, count in keyword_counts.most_common(limit*2) 
+                          if len(keyword) >= 3 and count >= 2]  # At least 3 chars and appears at least twice
+    return [keyword for keyword, count in meaningful_keywords[:limit]]
+
 # Create your views here.
 
 def home(request):
@@ -187,7 +253,8 @@ def gallery_index(request):
     selected_task_submitter = request.GET.get('task_submitter', '').strip()
     selected_model = request.GET.get('model', '').strip()
     sort_by = request.GET.get('sort', 'upvotes')  # Default to most upvoted
-    exclude_automine = request.GET.get('exclude_automine', 'false').lower() in ['true', '1', 'on']  # Default to False
+    # Automine ON by default
+    exclude_automine = request.GET.get('exclude_automine', '').lower() in ['true', '1', 'on']  # Default to False
     
     # Get current user's wallet address
     current_wallet_address = getattr(request, 'wallet_address', None)
@@ -229,6 +296,9 @@ def gallery_index(request):
     # Get available models with improved categorization
     available_models, model_categories = get_available_models_with_categories()
     
+    # Get popular keywords (excluding miner images)
+    popular_keywords = get_popular_keywords(exclude_automine=True, limit=15)
+    
     # Pagination
     paginator = Paginator(images, 24)
     page_number = request.GET.get('page', 1)
@@ -246,6 +316,7 @@ def gallery_index(request):
         'total_images': ArbiusImage.objects.filter(is_accessible=True).count(),  # Use filtered count
         'wallet_address': current_wallet_address,
         'user_profile': getattr(request, 'user_profile', None),
+        'popular_keywords': popular_keywords,
     }
     return render(request, 'gallery/index.html', context)
 
@@ -594,13 +665,77 @@ def verify_signature(request):
             'error': 'Internal server error'
         }, status=500)
 
+@csrf_exempt
+@require_POST
+def toggle_reaction(request, image_id):
+    """Toggle emoji reaction for an image"""
+    try:
+        # Get wallet address from session
+        wallet_address = request.session.get('wallet_address')
+        if not wallet_address:
+            return JsonResponse({
+                'success': False,
+                'error': 'Wallet not connected'
+            }, status=401)
+        
+        # Get the image
+        image = get_object_or_404(ArbiusImage, id=image_id, is_accessible=True)
+        
+        # Get emoji from request
+        data = json.loads(request.body)
+        emoji = data.get('emoji', '')
+        
+        # Validate emoji
+        valid_emojis = [choice[0] for choice in ImageReaction.EMOJI_CHOICES]
+        if emoji not in valid_emojis:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid emoji'
+            }, status=400)
+        
+        # Check if user already reacted with this emoji
+        existing_reaction = ImageReaction.objects.filter(
+            image=image,
+            wallet_address__iexact=wallet_address,
+            emoji=emoji
+        ).first()
+        
+        if existing_reaction:
+            # Remove reaction
+            existing_reaction.delete()
+            action = 'removed'
+        else:
+            # Add reaction
+            ImageReaction.objects.create(
+                image=image,
+                wallet_address=wallet_address,
+                emoji=emoji
+            )
+            action = 'added'
+        
+        # Get updated reactions
+        reactions = image.reactions
+        
+        return JsonResponse({
+            'success': True,
+            'action': action,
+            'reactions': reactions
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in toggle_reaction: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': 'Internal server error'
+        }, status=500)
+
 def gallery_images_api(request):
     """API endpoint for infinite scroll: returns a page of images as JSON"""
     search_query = request.GET.get('q', '').strip()
     selected_task_submitter = request.GET.get('task_submitter', '').strip()
     selected_model = request.GET.get('model', '').strip()
     sort_by = request.GET.get('sort', 'upvotes')
-    exclude_automine = request.GET.get('exclude_automine', 'false').lower() in ['true', '1', 'on']
+    exclude_automine = request.GET.get('exclude_automine', '').lower() in ['true', '1', 'on']  # Default to False
     
     # Get base queryset with filtering
     images = get_base_queryset(exclude_automine=exclude_automine)
@@ -659,6 +794,7 @@ def gallery_images_api(request):
             'upvote_count': image.upvotes.count(),
             'comment_count': image.comments.count(),
             'is_upvoted': image.upvotes.filter(wallet_address=getattr(request, 'wallet_address', None)).exists(),
+            'reactions': image.reactions,
         })
     
     return JsonResponse({

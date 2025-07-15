@@ -3,10 +3,11 @@
 {% block title %}Gallery - Arbius Playground{% endblock %}
 
 {% block content %}
+{% csrf_token %}
 <div class="min-h-screen bg-darkbg pt-20">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <!-- Minimal Search and Filters -->
-        <form method="get" action="{{ request.path }}" class="flex flex-wrap gap-3 items-end mb-8" id="gallery-filter-form">
+        <form method="get" action="{{ request.path }}" class="flex flex-wrap gap-3 items-end mb-4" id="gallery-filter-form">
             <input type="text" name="q" id="prompt-filter" class="px-4 py-2 bg-darkbg border border-border rounded-lg text-white placeholder-textmuted focus:outline-none focus:ring-1 focus:ring-white/20 focus:border-white/20 text-sm" placeholder="Search prompts..." value="{{ search_query }}" autocomplete="off">
             <input type="text" name="task_submitter" id="user-filter" class="px-4 py-2 bg-darkbg border border-border rounded-lg text-white placeholder-textmuted focus:outline-none focus:ring-1 focus:ring-white/20 focus:border-white/20 text-sm" placeholder="User (0x...)" value="{{ selected_task_submitter }}" autocomplete="off">
             <select name="model" id="model-filter" class="px-4 py-2 bg-darkbg border border-border rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-white/20 focus:border-white/20 text-sm">
@@ -22,14 +23,21 @@
                 <option value="comments" {% if sort_by == 'comments' %}selected{% endif %}>Most Commented</option>
             </select>
             <label class="flex items-center space-x-2 text-textmuted text-sm cursor-pointer select-none">
-                <input type="checkbox" name="exclude_automine" value="true" id="automine-toggle" {% if exclude_automine %}checked{% endif %} class="sr-only">
+                <input type="checkbox" name="exclude_automine" value="true" id="automine-toggle" class="sr-only">
                 <span id="automine-toggle-bg" class="relative inline-block w-10 h-6 align-middle select-none transition-colors duration-200 {% if exclude_automine %}bg-blue-600{% else %}bg-gray-700{% endif %} rounded-full shadow-inner">
                     <span class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-200" style="transform: translateX({% if exclude_automine %}1.25rem{% else %}0{% endif %});"></span>
                 </span>
                 <span class="ml-1">Hide Automine</span>
             </label>
-            <!-- No Search button, auto-submit on change -->
         </form>
+        <!-- Popular Keywords Row -->
+        {% if popular_keywords %}
+        <div class="flex flex-wrap gap-2 mb-8">
+            {% for keyword in popular_keywords %}
+                <a href="?q={{ keyword }}" class="inline-block px-3 py-1 rounded-full bg-white/10 text-white text-xs font-medium hover:bg-blue-500/30 transition-colors">#{{ keyword }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
 
         <!-- Active Filters (minimal) -->
         {% if selected_model or search_query or selected_task_submitter %}
@@ -51,14 +59,11 @@
         {% if page_obj %}
             <div id="gallery-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {% for image in page_obj %}
-                    <div class="bg-cardbg border border-border rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 group">
+                    <div class="relative group bg-cardbg border border-border rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300">
                         <a href="{% url 'image_detail' image.id %}" class="block">
                             <div class="aspect-square overflow-hidden">
                                 {% if image.is_accessible %}
-                                    <img src="{{ image.image_url }}" 
-                                         alt="Arbius AI Art - {{ image.cid }}" 
-                                         loading="lazy"
-                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                    <img src="{{ image.image_url }}" alt="Arbius AI Art - {{ image.cid }}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                                 {% else %}
                                     <div class="w-full h-full flex items-center justify-center bg-darkbg">
                                         <div class="text-center">
@@ -67,37 +72,19 @@
                                         </div>
                                     </div>
                                 {% endif %}
-                            </div>
-                            
-                            <div class="p-4">
-                                {% if image.clean_prompt %}
-                                    <div class="text-sm text-textmuted mb-3 line-clamp-2">
-                                        <i class="fas fa-comment mr-2"></i>
-                                        "{{ image.clean_prompt|truncatechars:80 }}"
+                                <!-- Hover Overlay for Emoji Reactions and Comments -->
+                                <div class="absolute bottom-2 right-2 flex flex-col items-end space-y-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+                                    <div class="flex space-x-1 bg-black/60 rounded-full px-2 py-1 reactions-container">
+                                        {% for emoji, count in image.reactions.items %}
+                                            <span class="emoji-reaction cursor-pointer hover:scale-110 transition-transform" data-image-id="{{ image.id }}" data-emoji="{{ emoji }}">
+                                                {{ emoji }} <span class="ml-1 text-xs">{{ count }}</span>
+                                            </span>
+                                        {% endfor %}
+                                        <!-- Add reaction button -->
+                                        <span class="emoji-add cursor-pointer hover:scale-110 transition-transform text-lg" data-image-id="{{ image.id }}" title="Add reaction">➕</span>
                                     </div>
-                                {% endif %}
-                                
-                                <!-- Social Features -->
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-4">
-                                        <button class="upvote-btn flex items-center space-x-2 text-sm {% if wallet_address %}cursor-pointer hover:text-red-400{% endif %}{% if image.user_has_upvoted %} text-red-400{% else %} text-textmuted{% endif %}" 
-                                                data-image-id="{{ image.id }}" 
-                                                {% if not wallet_address %}disabled title="Connect wallet to upvote"{% endif %}>
-                                            {% if image.user_has_upvoted %}
-                                                <i class="fas fa-heart"></i>
-                                            {% else %}
-                                                <i class="far fa-heart"></i>
-                                            {% endif %}
-                                            <span class="upvote-count">{{ image.upvote_count|default:0 }}</span>
-                                        </button>
-                                        <div class="flex items-center space-x-2 text-sm text-textmuted">
-                                            <i class="fas fa-comment"></i>
-                                            <span class="comment-count">{{ image.comment_count|default:0 }}</span>
-                                        </div>
-                                    </div>
-                                    <div class="text-xs text-textmuted">
-                                        <i class="fas fa-calendar mr-1"></i>
-                                        {{ image.timestamp|date:"M d, Y" }}
+                                    <div class="flex items-center bg-black/60 rounded-full px-2 py-1 text-xs text-white">
+                                        <i class="fas fa-comment mr-1"></i> {{ image.comment_count|default:0 }}
                                     </div>
                                 </div>
                             </div>
@@ -152,6 +139,151 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Handle emoji reaction clicks
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('emoji-reaction')) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const imageId = e.target.dataset.imageId;
+            const emoji = e.target.dataset.emoji;
+            const isDisabled = !('{{ wallet_address }}' && '{{ wallet_address }}' !== 'None');
+            
+            if (isDisabled) {
+                alert('Please connect your wallet to react to images.');
+                return;
+            }
+            
+            fetch(`/api/image/${imageId}/reaction/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({ emoji: emoji })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update the reactions display
+                    const reactionsContainer = e.target.closest('.reactions-container');
+                    if (reactionsContainer) {
+                        updateReactionsDisplay(reactionsContainer, data.reactions, imageId);
+                    }
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while reacting.');
+            });
+        }
+        
+        // Handle add reaction button clicks
+        if (e.target.classList.contains('emoji-add')) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const imageId = e.target.dataset.imageId;
+            const isDisabled = !('{{ wallet_address }}' && '{{ wallet_address }}' !== 'None');
+            
+            if (isDisabled) {
+                alert('Please connect your wallet to react to images.');
+                return;
+            }
+            
+            // Show emoji picker
+            showEmojiPicker(e.target, imageId);
+        }
+    });
+
+    function showEmojiPicker(button, imageId) {
+        // Remove any existing picker
+        const existingPicker = document.querySelector('.emoji-picker');
+        if (existingPicker) {
+            existingPicker.remove();
+        }
+        
+        // Create emoji picker
+        const picker = document.createElement('div');
+        picker.className = 'emoji-picker absolute bg-black/80 rounded-lg p-2 z-20';
+        picker.style.top = (button.offsetTop - 50) + 'px';
+        picker.style.left = (button.offsetLeft - 100) + 'px';
+        
+        const emojis = ['❤️', '😂', '😮', '😢', '👍', '👎', '🔥', '💯'];
+        emojis.forEach(emoji => {
+            const emojiBtn = document.createElement('span');
+            emojiBtn.className = 'emoji-picker-option cursor-pointer text-xl mx-1 hover:scale-125 transition-transform';
+            emojiBtn.textContent = emoji;
+            emojiBtn.onclick = () => addReaction(imageId, emoji, picker);
+            picker.appendChild(emojiBtn);
+        });
+        
+        button.parentElement.appendChild(picker);
+        
+        // Close picker when clicking outside
+        setTimeout(() => {
+            document.addEventListener('click', function closePicker(e) {
+                if (!picker.contains(e.target) && !button.contains(e.target)) {
+                    picker.remove();
+                    document.removeEventListener('click', closePicker);
+                }
+            });
+        }, 100);
+    }
+
+    function addReaction(imageId, emoji, picker) {
+        fetch(`/api/image/${imageId}/reaction/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({ emoji: emoji })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the reactions display
+                const reactionsContainer = picker.closest('.reactions-container');
+                if (reactionsContainer) {
+                    updateReactionsDisplay(reactionsContainer, data.reactions, imageId);
+                }
+                picker.remove();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while reacting.');
+        });
+    }
+
+    function updateReactionsDisplay(container, reactions, imageId) {
+        // Clear existing reactions
+        container.innerHTML = '';
+        
+        // Add each reaction
+        Object.entries(reactions).forEach(([emoji, count]) => {
+            const reactionSpan = document.createElement('span');
+            reactionSpan.className = 'emoji-reaction cursor-pointer hover:scale-110 transition-transform text-lg';
+            reactionSpan.dataset.imageId = imageId;
+            reactionSpan.dataset.emoji = emoji;
+            reactionSpan.innerHTML = `${emoji} <span class="ml-1 text-xs">${count}</span>`;
+            container.appendChild(reactionSpan);
+        });
+        
+        // Add the add reaction button back
+        const addButton = document.createElement('span');
+        addButton.className = 'emoji-add cursor-pointer hover:scale-110 transition-transform text-lg';
+        addButton.dataset.imageId = imageId;
+        addButton.title = 'Add reaction';
+        addButton.textContent = '➕';
+        container.appendChild(addButton);
+    }
+
     // Toggle styling for automine
     function updateToggle() {
         const dot = automineToggle.parentElement.querySelector('.dot');
@@ -170,55 +302,6 @@ document.addEventListener('DOMContentLoaded', function() {
         automineToggle.addEventListener('change', updateToggle);
         updateToggle();
     }
-
-    // Handle upvote clicks
-    document.querySelectorAll('.upvote-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const imageId = this.dataset.imageId;
-            const isDisabled = this.hasAttribute('disabled');
-            
-            if (isDisabled) {
-                alert('Please connect your wallet to upvote images.');
-                return;
-            }
-            
-            fetch(`/api/image/${imageId}/upvote/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const icon = this.querySelector('i');
-                    const count = this.querySelector('.upvote-count');
-                    
-                    if (data.action === 'added') {
-                        icon.className = 'fas fa-heart';
-                        this.classList.add('text-red-400');
-                        this.classList.remove('text-textmuted');
-                    } else {
-                        icon.className = 'far fa-heart';
-                        this.classList.remove('text-red-400');
-                        this.classList.add('text-textmuted');
-                    }
-                    
-                    count.textContent = data.upvote_count;
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while upvoting.');
-            });
-        });
-    });
 });
 
 let currentPage = {{ page_obj.number|default:1 }};
@@ -230,28 +313,22 @@ const spinner = document.getElementById('gallery-loading-spinner');
 function createImageCard(image) {
     // Returns a DOM element for a gallery image card (copy the HTML structure from the for-loop above)
     const div = document.createElement('div');
-    div.className = 'bg-cardbg border border-border rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 group';
+    div.className = 'relative group bg-cardbg border border-border rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300';
     div.innerHTML = `
         <a href="/gallery/image/${image.id}/" class="block">
             <div class="aspect-square overflow-hidden">
                 ${image.is_accessible ? `<img src="${image.image_url}" alt="Arbius AI Art" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">` : `<div class=\"w-full h-full flex items-center justify-center bg-darkbg\"><div class=\"text-center\"><div class=\"animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2\"></div><div class=\"text-textmuted text-sm\">Processing...</div></div></div>`}
-            </div>
-            <div class="p-4">
-                ${image.prompt ? `<div class=\"text-sm text-textmuted mb-3 line-clamp-2\"><i class=\"fas fa-comment mr-2\"></i>\"${image.prompt.substring(0, 80)}\"</div>` : ''}
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-4">
-                        <button class="upvote-btn flex items-center space-x-2 text-sm text-textmuted" disabled title="Connect wallet to upvote">
-                            <i class="far fa-heart"></i>
-                            <span class="upvote-count">${image.upvote_count || 0}</span>
-                        </button>
-                        <div class="flex items-center space-x-2 text-sm text-textmuted">
-                            <i class="fas fa-comment"></i>
-                            <span class="comment-count">${image.comment_count || 0}</span>
-                        </div>
+                <!-- Hover Overlay for Emoji Reactions and Comments -->
+                <div class="absolute bottom-2 right-2 flex flex-col items-end space-y-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+                    <div class="flex space-x-1 bg-black/60 rounded-full px-2 py-1 reactions-container">
+                        ${Object.entries(image.reactions || {}).map(([emoji, count]) => 
+                            `<span class="emoji-reaction cursor-pointer hover:scale-110 transition-transform" data-image-id="${image.id}" data-emoji="${emoji}">${emoji} <span class="ml-1 text-xs">${count}</span></span>`
+                        ).join('')}
+                        <!-- Add reaction button -->
+                        <span class="emoji-add cursor-pointer hover:scale-110 transition-transform text-lg" data-image-id="${image.id}" title="Add reaction">➕</span>
                     </div>
-                    <div class="text-xs text-textmuted">
-                        <i class="fas fa-calendar mr-1"></i>
-                        ${image.timestamp}
+                    <div class="flex items-center bg-black/60 rounded-full px-2 py-1 text-xs text-white">
+                        <i class="fas fa-comment mr-1"></i> ${image.comment_count || 0}
                     </div>
                 </div>
             </div>
