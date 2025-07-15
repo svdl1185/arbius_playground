@@ -75,6 +75,57 @@
         @apply absolute top-full right-0 mt-2 w-64 bg-cardbg border border-border rounded-xl shadow-xl backdrop-blur-lg z-50;
       }
       
+      /* Wallet Dropdown Styles */
+      .wallet-dropdown-menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        margin-top: 0.5rem;
+        width: 16rem;
+        background: #111111;
+        border: 1px solid #222222;
+        border-radius: 0.75rem;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        backdrop-filter: blur(16px);
+        z-index: 50;
+        overflow: hidden;
+      }
+      
+      .wallet-dropdown-item {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        color: #ffffff;
+        text-decoration: none;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.875rem;
+        border-bottom: 1px solid #222222;
+      }
+      
+      .wallet-dropdown-item:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #ffffff;
+      }
+      
+      .wallet-dropdown-item:last-child {
+        border-bottom: none;
+      }
+      
+      .wallet-dropdown-item i {
+        width: 18px;
+        margin-right: 8px;
+        text-align: center;
+      }
+      
+      /* Position the wallet container relative for dropdown positioning */
+      #wallet-connected-container {
+        position: relative;
+      }
+      
       /* Mobile-specific improvements */
       @media (max-width: 768px) {
         /* Improve touch targets */
@@ -330,6 +381,17 @@
             const dropdownMenu = document.getElementById('wallet-dropdown-menu');
             if (dropdownMenu && !walletConnectedContainer.contains(e.target)) {
                 dropdownMenu.style.display = 'none';
+            }
+        });
+        
+        // Handle Arbiscan link
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('#arbiscan-link')) {
+                e.preventDefault();
+                const walletAddress = document.getElementById('wallet-address').textContent;
+                if (walletAddress) {
+                    window.open(`https://arbiscan.io/address/${walletAddress}`, '_blank');
+                }
             }
         });
         
