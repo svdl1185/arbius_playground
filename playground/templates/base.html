@@ -286,6 +286,76 @@
     <!-- MetaMask Integration -->
     <script src="{% static 'js/metamask.js' %}"></script>
     
+    <!-- Wallet Dropdown Functionality -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Wallet dropdown functionality
+        const walletAddressSpan = document.getElementById('wallet-address');
+        const walletConnectedContainer = document.getElementById('wallet-connected-container');
+        const disconnectBtn = document.getElementById('disconnect-wallet-btn');
+        
+        // Create dropdown menu if it doesn't exist
+        if (walletConnectedContainer && !document.getElementById('wallet-dropdown-menu')) {
+            const dropdownMenu = document.createElement('div');
+            dropdownMenu.id = 'wallet-dropdown-menu';
+            dropdownMenu.className = 'wallet-dropdown-menu';
+            dropdownMenu.style.display = 'none';
+            dropdownMenu.innerHTML = `
+                <a href="#" class="wallet-dropdown-item" id="arbiscan-link">
+                    <img src="https://arbiscan.io/images/svg/brands/arbitrum.svg" style="width:18px;height:18px;vertical-align:middle;margin-right:8px;">Arbiscan
+                </a>
+                <a href="#" class="wallet-dropdown-item">
+                    <i class="fas fa-chart-pie" style="width:18px;margin-right:8px;"></i>Usage
+                </a>
+                <button class="wallet-dropdown-item" id="disconnect-wallet-btn-dropdown">
+                    <i class="fas fa-unlink" style="width:18px;margin-right:8px;"></i>Disconnect
+                </button>
+            `;
+            walletConnectedContainer.appendChild(dropdownMenu);
+        }
+        
+        // Toggle dropdown when clicking on wallet address
+        if (walletAddressSpan) {
+            walletAddressSpan.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const dropdownMenu = document.getElementById('wallet-dropdown-menu');
+                if (dropdownMenu) {
+                    dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
+                }
+            });
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const dropdownMenu = document.getElementById('wallet-dropdown-menu');
+            if (dropdownMenu && !walletConnectedContainer.contains(e.target)) {
+                dropdownMenu.style.display = 'none';
+            }
+        });
+        
+        // Handle disconnect button
+        if (disconnectBtn) {
+            disconnectBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (window.metaMaskManager) {
+                    window.metaMaskManager.disconnect();
+                }
+            });
+        }
+        
+        // Handle disconnect from dropdown
+        const disconnectDropdownBtn = document.getElementById('disconnect-wallet-btn-dropdown');
+        if (disconnectDropdownBtn) {
+            disconnectDropdownBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (window.metaMaskManager) {
+                    window.metaMaskManager.disconnect();
+                }
+            });
+        }
+    });
+    </script>
+    
     <!-- Toast Container -->
     <div id="toast-container" style="position:fixed;top:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:12px;"></div>
 </body>
