@@ -87,8 +87,13 @@
         border-radius: 0.75rem;
         box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         backdrop-filter: blur(16px);
-        z-index: 50;
+        z-index: 9999;
         overflow: hidden;
+        display: none;
+      }
+      
+      .wallet-dropdown-menu.show {
+        display: block !important;
       }
       
       .wallet-dropdown-item {
@@ -340,20 +345,32 @@
     <!-- Wallet Dropdown Functionality -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('[Wallet Dropdown] DOM loaded, setting up dropdown...');
+        
         // Wait for MetaMask manager to be available
         function setupWalletDropdown() {
+            console.log('[Wallet Dropdown] Setting up dropdown...');
             const walletAddressSpan = document.getElementById('wallet-address');
             const walletConnectedContainer = document.getElementById('wallet-connected-container');
             const disconnectBtn = document.getElementById('disconnect-wallet-btn');
             
-            if (!walletConnectedContainer) return;
+            console.log('[Wallet Dropdown] Elements found:', {
+                walletAddressSpan: !!walletAddressSpan,
+                walletConnectedContainer: !!walletConnectedContainer,
+                disconnectBtn: !!disconnectBtn
+            });
+            
+            if (!walletConnectedContainer) {
+                console.log('[Wallet Dropdown] No wallet container found');
+                return;
+            }
             
             // Create dropdown menu if it doesn't exist
             if (!document.getElementById('wallet-dropdown-menu')) {
+                console.log('[Wallet Dropdown] Creating dropdown menu...');
                 const dropdownMenu = document.createElement('div');
                 dropdownMenu.id = 'wallet-dropdown-menu';
                 dropdownMenu.className = 'wallet-dropdown-menu';
-                dropdownMenu.style.display = 'none';
                 dropdownMenu.innerHTML = `
                     <a href="#" class="wallet-dropdown-item" id="arbiscan-link">
                         <img src="https://arbiscan.io/images/svg/brands/arbitrum.svg" style="width:18px;height:18px;vertical-align:middle;margin-right:8px;">Arbiscan
@@ -366,16 +383,23 @@
                     </button>
                 `;
                 walletConnectedContainer.appendChild(dropdownMenu);
+                console.log('[Wallet Dropdown] Dropdown menu created');
             }
             
             // Toggle dropdown when clicking on wallet address
             if (walletAddressSpan) {
                 walletAddressSpan.addEventListener('click', function(e) {
                     e.stopPropagation();
+                    console.log('[Wallet Dropdown] Wallet address clicked');
                     const dropdownMenu = document.getElementById('wallet-dropdown-menu');
                     if (dropdownMenu) {
-                        const isVisible = dropdownMenu.style.display === 'block';
-                        dropdownMenu.style.display = isVisible ? 'none' : 'block';
+                        const isVisible = dropdownMenu.classList.contains('show');
+                        console.log('[Wallet Dropdown] Toggle dropdown, currently visible:', isVisible);
+                        if (isVisible) {
+                            dropdownMenu.classList.remove('show');
+                        } else {
+                            dropdownMenu.classList.add('show');
+                        }
                     }
                 });
             }
@@ -384,7 +408,8 @@
             document.addEventListener('click', function(e) {
                 const dropdownMenu = document.getElementById('wallet-dropdown-menu');
                 if (dropdownMenu && !walletConnectedContainer.contains(e.target)) {
-                    dropdownMenu.style.display = 'none';
+                    console.log('[Wallet Dropdown] Click outside, closing dropdown');
+                    dropdownMenu.classList.remove('show');
                 }
             });
             
@@ -394,6 +419,7 @@
                     e.preventDefault();
                     const walletAddress = document.getElementById('wallet-address').textContent;
                     if (walletAddress && walletAddress !== '[No address]') {
+                        console.log('[Wallet Dropdown] Opening Arbiscan for:', walletAddress);
                         window.open(`https://arbiscan.io/address/${walletAddress}`, '_blank');
                     }
                 }
@@ -403,6 +429,7 @@
             if (disconnectBtn) {
                 disconnectBtn.addEventListener('click', function(e) {
                     e.preventDefault();
+                    console.log('[Wallet Dropdown] Disconnect button clicked');
                     if (window.metaMaskManager) {
                         window.metaMaskManager.disconnect();
                     }
@@ -414,6 +441,7 @@
             if (disconnectDropdownBtn) {
                 disconnectDropdownBtn.addEventListener('click', function(e) {
                     e.preventDefault();
+                    console.log('[Wallet Dropdown] Dropdown disconnect clicked');
                     if (window.metaMaskManager) {
                         window.metaMaskManager.disconnect();
                     }
@@ -426,11 +454,15 @@
         
         // Also setup when MetaMask manager updates UI
         if (window.metaMaskManager) {
+            console.log('[Wallet Dropdown] MetaMask manager found, hooking into updateUI');
             const originalUpdateUI = window.metaMaskManager.updateUI.bind(window.metaMaskManager);
             window.metaMaskManager.updateUI = async function() {
                 await originalUpdateUI();
+                console.log('[Wallet Dropdown] MetaMask UI updated, re-setting up dropdown');
                 setupWalletDropdown();
             };
+        } else {
+            console.log('[Wallet Dropdown] MetaMask manager not found');
         }
     });
     </script>
