@@ -340,80 +340,97 @@
     <!-- Wallet Dropdown Functionality -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Wallet dropdown functionality
-        const walletAddressSpan = document.getElementById('wallet-address');
-        const walletConnectedContainer = document.getElementById('wallet-connected-container');
-        const disconnectBtn = document.getElementById('disconnect-wallet-btn');
-        
-        // Create dropdown menu if it doesn't exist
-        if (walletConnectedContainer && !document.getElementById('wallet-dropdown-menu')) {
-            const dropdownMenu = document.createElement('div');
-            dropdownMenu.id = 'wallet-dropdown-menu';
-            dropdownMenu.className = 'wallet-dropdown-menu';
-            dropdownMenu.style.display = 'none';
-            dropdownMenu.innerHTML = `
-                <a href="#" class="wallet-dropdown-item" id="arbiscan-link">
-                    <img src="https://arbiscan.io/images/svg/brands/arbitrum.svg" style="width:18px;height:18px;vertical-align:middle;margin-right:8px;">Arbiscan
-                </a>
-                <a href="#" class="wallet-dropdown-item">
-                    <i class="fas fa-chart-pie" style="width:18px;margin-right:8px;"></i>Usage
-                </a>
-                <button class="wallet-dropdown-item" id="disconnect-wallet-btn-dropdown">
-                    <i class="fas fa-unlink" style="width:18px;margin-right:8px;"></i>Disconnect
-                </button>
-            `;
-            walletConnectedContainer.appendChild(dropdownMenu);
-        }
-        
-        // Toggle dropdown when clicking on wallet address
-        if (walletAddressSpan) {
-            walletAddressSpan.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const dropdownMenu = document.getElementById('wallet-dropdown-menu');
-                if (dropdownMenu) {
-                    dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
-                }
-            });
-        }
-        
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            const dropdownMenu = document.getElementById('wallet-dropdown-menu');
-            if (dropdownMenu && !walletConnectedContainer.contains(e.target)) {
+        // Wait for MetaMask manager to be available
+        function setupWalletDropdown() {
+            const walletAddressSpan = document.getElementById('wallet-address');
+            const walletConnectedContainer = document.getElementById('wallet-connected-container');
+            const disconnectBtn = document.getElementById('disconnect-wallet-btn');
+            
+            if (!walletConnectedContainer) return;
+            
+            // Create dropdown menu if it doesn't exist
+            if (!document.getElementById('wallet-dropdown-menu')) {
+                const dropdownMenu = document.createElement('div');
+                dropdownMenu.id = 'wallet-dropdown-menu';
+                dropdownMenu.className = 'wallet-dropdown-menu';
                 dropdownMenu.style.display = 'none';
+                dropdownMenu.innerHTML = `
+                    <a href="#" class="wallet-dropdown-item" id="arbiscan-link">
+                        <img src="https://arbiscan.io/images/svg/brands/arbitrum.svg" style="width:18px;height:18px;vertical-align:middle;margin-right:8px;">Arbiscan
+                    </a>
+                    <a href="#" class="wallet-dropdown-item">
+                        <i class="fas fa-chart-pie" style="width:18px;margin-right:8px;"></i>Usage
+                    </a>
+                    <button class="wallet-dropdown-item" id="disconnect-wallet-btn-dropdown">
+                        <i class="fas fa-unlink" style="width:18px;margin-right:8px;"></i>Disconnect
+                    </button>
+                `;
+                walletConnectedContainer.appendChild(dropdownMenu);
             }
-        });
-        
-        // Handle Arbiscan link
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('#arbiscan-link')) {
-                e.preventDefault();
-                const walletAddress = document.getElementById('wallet-address').textContent;
-                if (walletAddress) {
-                    window.open(`https://arbiscan.io/address/${walletAddress}`, '_blank');
-                }
+            
+            // Toggle dropdown when clicking on wallet address
+            if (walletAddressSpan) {
+                walletAddressSpan.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const dropdownMenu = document.getElementById('wallet-dropdown-menu');
+                    if (dropdownMenu) {
+                        const isVisible = dropdownMenu.style.display === 'block';
+                        dropdownMenu.style.display = isVisible ? 'none' : 'block';
+                    }
+                });
             }
-        });
-        
-        // Handle disconnect button
-        if (disconnectBtn) {
-            disconnectBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                if (window.metaMaskManager) {
-                    window.metaMaskManager.disconnect();
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                const dropdownMenu = document.getElementById('wallet-dropdown-menu');
+                if (dropdownMenu && !walletConnectedContainer.contains(e.target)) {
+                    dropdownMenu.style.display = 'none';
                 }
             });
+            
+            // Handle Arbiscan link
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('#arbiscan-link')) {
+                    e.preventDefault();
+                    const walletAddress = document.getElementById('wallet-address').textContent;
+                    if (walletAddress && walletAddress !== '[No address]') {
+                        window.open(`https://arbiscan.io/address/${walletAddress}`, '_blank');
+                    }
+                }
+            });
+            
+            // Handle disconnect button
+            if (disconnectBtn) {
+                disconnectBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (window.metaMaskManager) {
+                        window.metaMaskManager.disconnect();
+                    }
+                });
+            }
+            
+            // Handle disconnect from dropdown
+            const disconnectDropdownBtn = document.getElementById('disconnect-wallet-btn-dropdown');
+            if (disconnectDropdownBtn) {
+                disconnectDropdownBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (window.metaMaskManager) {
+                        window.metaMaskManager.disconnect();
+                    }
+                });
+            }
         }
         
-        // Handle disconnect from dropdown
-        const disconnectDropdownBtn = document.getElementById('disconnect-wallet-btn-dropdown');
-        if (disconnectDropdownBtn) {
-            disconnectDropdownBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                if (window.metaMaskManager) {
-                    window.metaMaskManager.disconnect();
-                }
-            });
+        // Setup dropdown immediately
+        setupWalletDropdown();
+        
+        // Also setup when MetaMask manager updates UI
+        if (window.metaMaskManager) {
+            const originalUpdateUI = window.metaMaskManager.updateUI.bind(window.metaMaskManager);
+            window.metaMaskManager.updateUI = async function() {
+                await originalUpdateUI();
+                setupWalletDropdown();
+            };
         }
     });
     </script>
