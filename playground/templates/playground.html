@@ -1,4 +1,4 @@
-{% extends 'base_no_nav.html' %}
+{% extends 'base.html' %}
 {% load static %}
 
 {% block title %}Arbius Playground - Chat{% endblock %}
@@ -26,11 +26,12 @@
   .playground-root {
     display: flex;
     flex-direction: row;
-    height: 100vh !important;
+    height: calc(100vh - 80px) !important; /* Account for navbar height */
     min-height: 0 !important;
     background: #0a0a0a;
     width: 100%;
     overflow: hidden !important;
+    margin-top: 80px; /* Add top margin for navbar */
   }
   .sidebar { 
     width: 260px; 

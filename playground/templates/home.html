@@ -1,4 +1,4 @@
-{% extends 'base_no_nav.html' %}
+{% extends 'base.html' %}
 {% load static %}
 
 {% block title %}Arbius - Decentralized AI Generation{% endblock %}
@@ -19,12 +19,13 @@
   
   .hero-section {
     background: linear-gradient(135deg, #000000 0%, #111111 50%, #000000 100%);
-    min-height: 100vh;
+    min-height: calc(100vh - 80px); /* Account for navbar height */
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
     overflow: hidden;
+    padding-top: 80px; /* Add top padding for navbar */
   }
   
   .hero-content {
