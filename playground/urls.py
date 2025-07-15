@@ -13,6 +13,6 @@ urlpatterns = [
     path('api/image/<int:image_id>/comment/', views.add_comment, name='add_comment'),
     path('api/gallery/images/', views.gallery_images_api, name='gallery_images_api'),
     
-    # Mining Dashboard
-    path('dashboard/', views.mining_dashboard, name='mining_dashboard'),
+    # Stats Dashboard (replacing mining dashboard)
+    path('dashboard/', views.stats_dashboard, name='stats_dashboard'),
 ] 

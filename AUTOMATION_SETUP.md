@@ -1,14 +1,14 @@
-# Automated Gallery Updates & Mining Dashboard Setup
+# Automated Gallery Updates & Stats Dashboard Setup
 
-This guide explains how to set up automated gallery updates and the mining dashboard for the Arbius Playground.
+This guide explains how to set up automated gallery updates and the stats dashboard for the Arbius Playground.
 
 ## 🎯 Features Integrated
 
-### 1. Mining Dashboard (`/dashboard/`)
-- **Comprehensive Analytics**: View miner statistics, earnings, and activity
-- **Token Tracking**: Monitor AIUS token movements and sales
-- **Real-time Data**: Live mining activity and network statistics
-- **Minimal Design**: Matches the playground's clean, modern UI
+### 1. Stats Dashboard (`/dashboard/`)
+- **Live Statistics**: View image generation and user activity statistics
+- **Real-time Data**: Live metrics including total images, users, and models
+- **Interactive Charts**: Cumulative images over time and daily image generation
+- **Clean Design**: Matches the playground's modern UI with dark theme
 
 ### 2. Automated Gallery Updates
 - **Blockchain Scanning**: Automatically scan for new Arbius images
@@ -161,22 +161,23 @@ python manage.py analyze_miner_tokens --all --force
 python manage.py analyze_miner_tokens --all --quiet
 ```
 
-## 📊 Mining Dashboard Features
+## 📊 Stats Dashboard Features
 
-### Network Overview
-- **Total Tasks**: Complete count of processed images
-- **AIUS Earned**: Total tokens earned by all miners
-- **USD Sales**: Total USD value from token sales
+### Key Metrics
+- **Total Images**: Complete count of all generated images
+- **Images (Week)**: Images generated in the last 7 days
+- **New (24H)**: Images generated in the last 24 hours
+- **Unique Users**: Total number of unique task submitters
+- **Users (Week)**: Unique users active in the last 7 days
+- **Models**: Number of unique AI models used
 
-### Miner Statistics
-- **Individual Miner Data**: Tasks completed, earnings, activity dates
-- **Arbiscan Links**: Direct links to miner addresses
-- **Analysis Status**: Shows if token analysis is complete
+### Interactive Charts
+- **Cumulative Images Over Time**: Line chart showing total image growth over 30 days
+- **Daily Images (Last 25 Days)**: Bar chart showing daily image generation activity
 
-### Recent Activity
-- **Live Mining Activity**: Real-time solution submissions
-- **Prompt Preview**: Truncated prompts for quick review
-- **Transaction Links**: Direct links to blockchain transactions
+### Real-time Updates
+- **Live Data**: Statistics update automatically as new images are scanned
+- **Responsive Design**: Works seamlessly on desktop and mobile devices
 
 ## 🔍 Monitoring & Troubleshooting
 
@@ -228,7 +229,7 @@ print(f'Miners: {total} total, {active} active');
 - **Less Frequent**: Change to `*/10 * * * *` (every 10 minutes)
 
 ### Add More Analytics
-- Extend `mining_dashboard` view in `views.py`
+- Extend `stats_dashboard` view in `views.py`
 - Add new metrics to the dashboard template
 - Create additional management commands
 
@@ -273,7 +274,7 @@ if not cached_stats:
 - Rotate API keys regularly
 
 ### Access Control
-- Mining dashboard is publicly accessible (consider adding auth)
+- Stats dashboard is publicly accessible (consider adding auth)
 - Monitor for unusual scanning activity
 - Implement request rate limiting
 

@@ -670,105 +670,88 @@ def gallery_images_api(request):
     })
 
 
-def mining_dashboard(request):
-    """Hidden mining analytics dashboard - only accessible via direct URL"""
-    from django.db.models import Sum, Count, Avg, F, Q
-    from django.db.models.functions import TruncDate, TruncHour
+def stats_dashboard(request):
+    """Live Statistics Dashboard - shows image generation and user activity stats"""
+    from django.db.models import Count, Q
+    from django.db.models.functions import TruncDate
+    from datetime import datetime, timedelta
+    import json
     
     # Get current user's wallet address
     current_wallet_address = getattr(request, 'wallet_address', None)
     
-    # Get all miners with their comprehensive statistics
-    miners_stats = ArbiusImage.objects.values('solution_provider').annotate(
-        total_tasks_completed=Count('id'),
-        first_task=Min('timestamp'),
-        last_task=Max('timestamp')
-    ).filter(
-        solution_provider__isnull=False
-    ).exclude(
-        solution_provider='0x0000000000000000000000000000000000000000'
-    ).order_by('-total_tasks_completed')
+    # Calculate time periods
+    now = timezone.now()
+    one_week_ago = now - timedelta(days=7)
+    one_day_ago = now - timedelta(days=1)
     
-    # Get token earnings data
-    token_earnings_data = {}
-    try:
-        from .models import MinerTokenEarnings
-        earnings_queryset = MinerTokenEarnings.objects.all()
-        for earnings in earnings_queryset:
-            token_earnings_data[earnings.miner_address.lower()] = earnings
-    except Exception as e:
-        logger.warning(f"Error fetching token earnings: {e}")
+    # Get base queryset (accessible images only)
+    base_queryset = get_base_queryset(exclude_automine=False)
     
-    # Enhanced miner statistics with all required data
-    total_aius_earned_all = 0
-    total_usd_sold_all = 0
+    # Calculate statistics
+    total_images = base_queryset.count()
+    images_week = base_queryset.filter(timestamp__gte=one_week_ago).count()
+    images_24h = base_queryset.filter(timestamp__gte=one_day_ago).count()
     
-    for miner in miners_stats:
-        miner['display_name'] = get_display_name_for_wallet(miner['solution_provider'])
-        miner['short_address'] = f"{miner['solution_provider'][:8]}...{miner['solution_provider'][-8:]}"
-        
-        # Format dates
-        if miner['first_task']:
-            miner['first_task_formatted'] = miner['first_task'].strftime('%Y-%m-%d')
-        else:
-            miner['first_task_formatted'] = 'N/A'
-            
-        if miner['last_task']:
-            miner['last_task_formatted'] = miner['last_task'].strftime('%Y-%m-%d')
-        else:
-            miner['last_task_formatted'] = 'N/A'
-        
-        # Get token earnings data for this miner
-        miner_key = miner['solution_provider'].lower()
-        token_earnings = token_earnings_data.get(miner_key)
-        
-        if token_earnings:
-            miner['aius_earned'] = float(token_earnings.total_aius_earned)
-            miner['usd_from_sales'] = float(token_earnings.total_usd_from_sales)
-            miner['has_real_earnings'] = True
-            miner['last_analyzed'] = token_earnings.last_analyzed
-            
-            total_aius_earned_all += miner['aius_earned']
-            total_usd_sold_all += miner['usd_from_sales']
-        else:
-            # No token data yet - needs analysis
-            miner['aius_earned'] = 0
-            miner['usd_from_sales'] = 0
-            miner['has_real_earnings'] = False
-            miner['last_analyzed'] = None
+    # Unique users (task submitters)
+    unique_users = base_queryset.values('task_submitter').distinct().count()
+    users_week = base_queryset.filter(timestamp__gte=one_week_ago).values('task_submitter').distinct().count()
     
-    # Get basic network statistics
-    total_tasks = ArbiusImage.objects.count()
+    # Unique models
+    unique_models = base_queryset.values('model_id').distinct().count()
     
-    # Get recent mining activity with prompts
-    recent_mining_activity = ArbiusImage.objects.filter(
-        solution_provider__isnull=False
-    ).exclude(
-        solution_provider='0x0000000000000000000000000000000000000000'
-    ).select_related().order_by('-timestamp')[:20]
+    # Get cumulative images over time data (last 30 days)
+    thirty_days_ago = now - timedelta(days=30)
+    cumulative_data = []
     
-    # Add display names and format prompts for recent activity
-    for activity in recent_mining_activity:
-        activity.miner_display_name = get_display_name_for_wallet(activity.solution_provider)
-        activity.submitter_display_name = get_display_name_for_wallet(activity.task_submitter)
-        # Truncate prompt if too long
-        if activity.prompt and len(activity.prompt) > 50:
-            activity.prompt_short = activity.prompt[:50] + "..."
-        else:
-            activity.prompt_short = activity.prompt or "N/A"
+    # Get daily counts for the last 30 days
+    daily_counts = base_queryset.filter(
+        timestamp__gte=thirty_days_ago
+    ).annotate(
+        date=TruncDate('timestamp')
+    ).values('date').annotate(
+        count=Count('id')
+    ).order_by('date')
     
-    # Check if we have any token earnings data at all
-    has_token_data = len(token_earnings_data) > 0
+    # Create cumulative data
+    cumulative_count = 0
+    for day_data in daily_counts:
+        cumulative_count += day_data['count']
+        cumulative_data.append({
+            'date': day_data['date'].strftime('%m/%d'),
+            'count': cumulative_count
+        })
+    
+    # Get daily images for last 25 days
+    twenty_five_days_ago = now - timedelta(days=25)
+    daily_images_data = []
+    
+    daily_images = base_queryset.filter(
+        timestamp__gte=twenty_five_days_ago
+    ).annotate(
+        date=TruncDate('timestamp')
+    ).values('date').annotate(
+        count=Count('id')
+    ).order_by('date')
+    
+    # Create daily images data
+    for day_data in daily_images:
+        daily_images_data.append({
+            'date': day_data['date'].strftime('%m/%d'),
+            'count': day_data['count']
+        })
     
     context = {
-        'miners_stats': miners_stats,
-        'total_tasks': total_tasks,
-        'total_aius_earned': total_aius_earned_all,
-        'total_usd_sold': total_usd_sold_all,
-        'recent_mining_activity': recent_mining_activity,
-        'has_token_data': has_token_data,
+        'total_images': total_images,
+        'images_week': images_week,
+        'images_24h': images_24h,
+        'unique_users': unique_users,
+        'users_week': users_week,
+        'unique_models': unique_models,
+        'cumulative_data': json.dumps(cumulative_data),
+        'daily_images_data': json.dumps(daily_images_data),
         'wallet_address': current_wallet_address,
         'user_profile': getattr(request, 'user_profile', None),
     }
     
-    return render(request, 'playground/mining_dashboard.html', context)
+    return render(request, 'playground/stats_dashboard.html', context)

@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="min-h-screen bg-darkbg text-white">
+    <div class="container mx-auto px-4 py-8">
+
+        <!-- Key Metrics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Total Images -->
+            <div class="bg-darkbg border border-border rounded-lg p-6">
+                <div class="text-3xl font-bold text-pink-400 mb-2">{{ total_images|floatformat:0 }}</div>
+                <div class="text-textmuted text-sm uppercase tracking-wide">TOTAL IMAGES</div>
+            </div>
+            
+            <!-- Images (Week) -->
+            <div class="bg-darkbg border border-border rounded-lg p-6">
+                <div class="text-3xl font-bold text-pink-400 mb-2">{{ images_week|floatformat:0 }}</div>
+                <div class="text-textmuted text-sm uppercase tracking-wide">IMAGES (WEEK)</div>
+            </div>
+            
+            <!-- New (24H) -->
+            <div class="bg-darkbg border border-border rounded-lg p-6">
+                <div class="text-3xl font-bold text-pink-400 mb-2">{{ images_24h|floatformat:0 }}</div>
+                <div class="text-textmuted text-sm uppercase tracking-wide">NEW (24H)</div>
+            </div>
+        </div>
+
+        <!-- Second Row of Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Unique Users -->
+            <div class="bg-darkbg border border-border rounded-lg p-6">
+                <div class="text-3xl font-bold text-pink-400 mb-2">{{ unique_users|floatformat:0 }}</div>
+                <div class="text-textmuted text-sm uppercase tracking-wide">UNIQUE USERS</div>
+            </div>
+            
+            <!-- Users (Week) -->
+            <div class="bg-darkbg border border-border rounded-lg p-6">
+                <div class="text-3xl font-bold text-pink-400 mb-2">{{ users_week|floatformat:0 }}</div>
+                <div class="text-textmuted text-sm uppercase tracking-wide">USERS (WEEK)</div>
+            </div>
+            
+            <!-- Models -->
+            <div class="bg-darkbg border border-border rounded-lg p-6">
+                <div class="text-3xl font-bold text-pink-400 mb-2">{{ unique_models|floatformat:0 }}</div>
+                <div class="text-textmuted text-sm uppercase tracking-wide">MODELS</div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Cumulative Images Over Time -->
+            <div class="bg-darkbg border border-border rounded-lg p-6">
+                <h3 class="text-xl font-semibold mb-6 flex items-center gap-2">
+                    <span class="text-blue-400">📈</span> Cumulative Images Over Time
+                </h3>
+                <div class="h-64">
+                    <canvas id="cumulativeChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Daily Images (Last 25 Days) -->
+            <div class="bg-darkbg border border-border rounded-lg p-6">
+                <h3 class="text-xl font-semibold mb-6 flex items-center gap-2">
+                    <span class="text-blue-400">📊</span> Daily Images (Last 25 Days)
+                </h3>
+                <div class="h-64">
+                    <canvas id="dailyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Parse the JSON data from Django context
+const cumulativeData = {{ cumulative_data|safe }};
+const dailyData = {{ daily_images_data|safe }};
+
+// Cumulative Images Over Time Chart
+const cumulativeCtx = document.getElementById('cumulativeChart').getContext('2d');
+new Chart(cumulativeCtx, {
+    type: 'line',
+    data: {
+        labels: cumulativeData.map(item => item.date),
+        datasets: [{
+            label: 'Cumulative Images',
+            data: cumulativeData.map(item => item.count),
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            borderWidth: 2,
+            pointBackgroundColor: '#3b82f6',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            tension: 0.1,
+            fill: false
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            x: {
+                grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                },
+                ticks: {
+                    color: '#9ca3af'
+                }
+            },
+            y: {
+                grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                },
+                ticks: {
+                    color: '#9ca3af'
+                }
+            }
+        }
+    }
+});
+
+// Daily Images Chart
+const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+new Chart(dailyCtx, {
+    type: 'bar',
+    data: {
+        labels: dailyData.map(item => item.date),
+        datasets: [{
+            label: 'Daily Images',
+            data: dailyData.map(item => item.count),
+            backgroundColor: '#3b82f6',
+            borderColor: '#2563eb',
+            borderWidth: 1,
+            borderRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            x: {
+                grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                },
+                ticks: {
+                    color: '#9ca3af'
+                }
+            },
+            y: {
+                grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                },
+                ticks: {
+                    color: '#9ca3af',
+                    beginAtZero: true
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %} 
