@@ -23,7 +23,7 @@
                 <option value="comments" {% if sort_by == 'comments' %}selected{% endif %}>Most Commented</option>
             </select>
             <label class="flex items-center space-x-2 text-textmuted text-sm cursor-pointer select-none">
-                <input type="checkbox" name="exclude_automine" value="true" id="automine-toggle" class="sr-only">
+                <input type="checkbox" name="exclude_automine" value="true" id="automine-toggle" class="sr-only"{% if exclude_automine %} checked{% endif %}>
                 <span id="automine-toggle-bg" class="relative inline-block w-10 h-6 align-middle select-none transition-colors duration-200 {% if exclude_automine %}bg-blue-600{% else %}bg-gray-700{% endif %} rounded-full shadow-inner">
                     <span class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-200" style="transform: translateX({% if exclude_automine %}1.25rem{% else %}0{% endif %});"></span>
                 </span>

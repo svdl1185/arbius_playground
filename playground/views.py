@@ -253,8 +253,17 @@ def gallery_index(request):
     selected_task_submitter = request.GET.get('task_submitter', '').strip()
     selected_model = request.GET.get('model', '').strip()
     sort_by = request.GET.get('sort', 'upvotes')  # Default to most upvoted
-    # Automine ON by default
-    exclude_automine = request.GET.get('exclude_automine', '').lower() in ['true', '1', 'on']  # Default to False
+    # Hide Automine ON by default for initial page loads
+    # Check if this is a form submission (has any filter parameters) or initial load
+    has_filter_params = bool(search_query or selected_task_submitter or selected_model or 
+                           request.GET.get('sort') or 'exclude_automine' in request.GET)
+    
+    if has_filter_params:
+        # This is a form submission - respect the checkbox state
+        exclude_automine = request.GET.get('exclude_automine', '').lower() in ['true', '1', 'on']
+    else:
+        # Initial page load - default to True (Hide Automine ON)
+        exclude_automine = True
     
     # Get current user's wallet address
     current_wallet_address = getattr(request, 'wallet_address', None)
