@@ -269,11 +269,13 @@
         </div>
         
         <!-- Desktop Navigation -->
+        {% if request.resolver_match.url_name != 'home' %}
         <div class="hidden md:flex items-center gap-6 ml-8">
           <a href="{% url 'playground' %}" class="nav-link {% if request.resolver_match.url_name == 'playground' %}nav-link-active{% endif %}">Playground</a>
           <a href="{% url 'gallery_index' %}" class="nav-link {% if 'gallery' in request.resolver_match.url_name %}nav-link-active{% endif %}">Gallery</a>
           <a href="{% url 'stats_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'stats_dashboard' %}nav-link-active{% endif %}">Stats</a>
         </div>
+        {% endif %}
         
         <!-- Wallet/Actions -->
         <div class="flex items-center gap-3 ml-auto">
@@ -308,17 +310,21 @@
           </div>
           
           <!-- Hamburger for mobile -->
+          {% if request.resolver_match.url_name != 'home' %}
           <button id="nav-mobile-toggle" class="md:hidden flex items-center justify-center w-10 h-10 rounded-lg hover:bg-cardbg transition">
             <i class="fas fa-bars text-xl"></i>
           </button>
+          {% endif %}
         </div>
       </div>
       <!-- Mobile Menu -->
+      {% if request.resolver_match.url_name != 'home' %}
       <div id="nav-mobile-menu" class="nav-mobile-menu fixed top-16 left-0 w-full py-6 px-6 flex flex-col gap-4 md:hidden hidden z-40">
         <a href="{% url 'playground' %}" class="nav-link {% if request.resolver_match.url_name == 'playground' %}nav-link-active{% endif %}">Playground</a>
         <a href="{% url 'gallery_index' %}" class="nav-link {% if 'gallery' in request.resolver_match.url_name %}nav-link-active{% endif %}">Gallery</a>
         <a href="{% url 'stats_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'stats_dashboard' %}nav-link-active{% endif %}">Stats</a>
       </div>
+      {% endif %}
       <script>
         const navToggle = document.getElementById('nav-mobile-toggle');
         const navMenu = document.getElementById('nav-mobile-menu');
