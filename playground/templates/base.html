@@ -321,7 +321,18 @@
           <!-- Desktop Wallet Section -->
           <div class="hidden md:flex items-center gap-3">
             <div class="navbar-wallet">
-              <button id="connect-wallet-btn" class="wallet-btn-outline">Connect</button>
+              <!-- Loading State -->
+              <div id="wallet-loading-container" class="flex items-center justify-center">
+                <div class="flex items-center gap-2 px-4 py-2">
+                  <div class="w-4 h-4 border-2 border-gray-400 border-t-white rounded-full animate-spin"></div>
+                  <span class="text-gray-400 text-sm">Checking...</span>
+                </div>
+              </div>
+              
+              <!-- Connect Button -->
+              <button id="connect-wallet-btn" class="wallet-btn-outline" style="display:none;">Connect</button>
+              
+              <!-- Connected State -->
               <div id="wallet-connected-container" style="display:none;">
                 <div id="aius-balance-indicator" class="aius-balance-pill">AIUS: Loading...</div>
                 <div class="wallet-connected-dropdown" style="position:relative;display:inline-block;">
@@ -339,7 +350,18 @@
           <!-- Mobile Wallet Section -->
           <div class="md:hidden flex items-center gap-2">
             <div class="navbar-wallet">
-              <button id="connect-wallet-btn-mobile" class="wallet-btn-outline">Connect</button>
+              <!-- Loading State -->
+              <div id="wallet-loading-container-mobile" class="flex items-center justify-center">
+                <div class="flex items-center gap-2 px-3 py-2">
+                  <div class="w-3 h-3 border-2 border-gray-400 border-t-white rounded-full animate-spin"></div>
+                  <span class="text-gray-400 text-xs">Checking...</span>
+                </div>
+              </div>
+              
+              <!-- Connect Button -->
+              <button id="connect-wallet-btn-mobile" class="wallet-btn-outline" style="display:none;">Connect</button>
+              
+              <!-- Connected State -->
               <div id="wallet-connected-mobile" style="display:none;">
                 <div id="aius-balance-indicator-mobile" class="aius-balance-pill">AIUS: Loading...</div>
                 <div class="wallet-connected-dropdown" style="position:relative;display:inline-block;">

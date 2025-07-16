@@ -123,6 +123,7 @@ class MetaMaskManager {
             }
         } else {
             showToast('MetaMask is not installed. Please install MetaMask to use this feature.', 'warning');
+            this.showMetaMaskNotInstalled();
         }
     }
 
@@ -572,17 +573,21 @@ class MetaMaskManager {
         const walletConnectedMobile = document.getElementById('wallet-connected-mobile');
         const walletDropdownMenu = document.getElementById('wallet-dropdown-menu');
         const walletDropdownMenuMobile = document.getElementById('wallet-dropdown-menu-mobile');
+        const walletLoadingContainer = document.getElementById('wallet-loading-container');
+        const walletLoadingContainerMobile = document.getElementById('wallet-loading-container-mobile');
         
-        // Hide all by default
-        if (connectBtn) connectBtn.style.display = 'inline-flex';
-        if (connectBtnMobile) connectBtnMobile.style.display = 'inline-flex';
+        // Hide loading states
+        if (walletLoadingContainer) walletLoadingContainer.style.display = 'none';
+        if (walletLoadingContainerMobile) walletLoadingContainerMobile.style.display = 'none';
+        
+        // Hide all wallet states by default
+        if (connectBtn) connectBtn.style.display = 'none';
+        if (connectBtnMobile) connectBtnMobile.style.display = 'none';
         if (walletConnectedContainer) walletConnectedContainer.style.display = 'none';
         if (walletConnectedMobile) walletConnectedMobile.style.display = 'none';
         
-        // Show correct UI
+        // Show correct UI based on connection status
         if (this.isConnected && this.account) {
-            if (connectBtn) connectBtn.style.display = 'none';
-            if (connectBtnMobile) connectBtnMobile.style.display = 'none';
             if (walletConnectedContainer) walletConnectedContainer.style.display = 'block';
             if (walletConnectedMobile) walletConnectedMobile.style.display = 'block';
             
@@ -622,6 +627,10 @@ class MetaMaskManager {
             
             // Update AIUS balance if connected
             await this.updateBalanceUI();
+        } else {
+            // Show connect buttons when not connected
+            if (connectBtn) connectBtn.style.display = 'inline-flex';
+            if (connectBtnMobile) connectBtnMobile.style.display = 'inline-flex';
         }
         
         // Hide dropdown menus by default
@@ -635,8 +644,15 @@ class MetaMaskManager {
     showMetaMaskNotInstalled() {
         const connectBtn = document.getElementById('connect-wallet-btn');
         const connectBtnMobile = document.getElementById('connect-wallet-btn-mobile');
+        const walletLoadingContainer = document.getElementById('wallet-loading-container');
+        const walletLoadingContainerMobile = document.getElementById('wallet-loading-container-mobile');
+        
+        // Hide loading states
+        if (walletLoadingContainer) walletLoadingContainer.style.display = 'none';
+        if (walletLoadingContainerMobile) walletLoadingContainerMobile.style.display = 'none';
         
         if (connectBtn) {
+            connectBtn.style.display = 'inline-flex';
             connectBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Install MetaMask';
             connectBtn.onclick = () => {
                 window.open('https://metamask.io/download/', '_blank');
@@ -644,6 +660,7 @@ class MetaMaskManager {
         }
         
         if (connectBtnMobile) {
+            connectBtnMobile.style.display = 'inline-flex';
             connectBtnMobile.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Install MetaMask';
             connectBtnMobile.onclick = () => {
                 window.open('https://metamask.io/download/', '_blank');
