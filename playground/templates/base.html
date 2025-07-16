@@ -5,6 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{% block title %}Arbius Playground{% endblock %}</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -47,6 +51,12 @@
         backdrop-filter: blur(16px);
         box-shadow: 0 2px 24px 0 rgba(0,0,0,0.3);
         border-bottom: 1px solid #222222;
+        width: 100vw !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 9999 !important;
       }
       .nav-link {
         @apply text-textmuted hover:text-white transition px-3 py-2 rounded-lg font-medium;
@@ -203,15 +213,7 @@
           padding: 0 1rem;
         }
         
-        /* Make logo smaller on mobile */
-        .nav-logo {
-          font-size: 1.25rem !important;
-        }
-        
-        .nav-logo img {
-          width: 1.5rem !important;
-          height: 1.5rem !important;
-        }
+
         
         /* Improve mobile menu */
         .nav-mobile-menu {
@@ -259,14 +261,7 @@
           padding: 0 0.75rem;
         }
         
-        .nav-logo {
-          font-size: 1.1rem !important;
-        }
-        
-        .nav-logo img {
-          width: 1.25rem !important;
-          height: 1.25rem !important;
-        }
+
         
         #connect-wallet-btn-mobile {
           padding: 0.625rem 1rem !important;
@@ -297,27 +292,30 @@
 </head>
 <body class="bg-darkbg text-textlight font-sans min-h-screen flex flex-col">
     <!-- Navigation -->
-    <nav class="nav-glass w-full fixed top-0 z-30 transition-all duration-300">
-      <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 flex items-center justify-between h-16 relative">
-        <!-- Logo -->
-        <div class="flex items-center justify-start gap-2 pl-2 py-2">
-          <a href="{% url 'home' %}" class="flex items-center gap-2 font-bold text-lg sm:text-2xl text-white">
-            <img src="{% static 'arbius.ef337b97.svg' %}" alt="Arbius Logo" class="inline-block w-7 h-7 sm:w-8 sm:h-8" />
+    <nav class="nav-glass w-full fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+      <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 flex items-center h-16 relative">
+        <!-- Logo - Fixed positioning -->
+        <div class="flex items-center justify-start gap-3 pl-0 py-2 flex-shrink-0">
+          <a href="{% url 'home' %}" class="flex items-center gap-3 font-bold text-xl sm:text-3xl text-white">
+            <img src="{% static 'arbius.ef337b97.svg' %}" alt="Arbius Logo" class="inline-block w-8 h-8 sm:w-10 sm:h-10" />
             <span>Arbius</span>
           </a>
         </div>
         
         <!-- Desktop Navigation -->
         {% if request.resolver_match.url_name != 'home' %}
-        <div class="hidden md:flex items-center gap-6 ml-8">
+        <div class="hidden md:flex items-center gap-6 ml-8 flex-1">
           <a href="{% url 'playground' %}" class="nav-link {% if request.resolver_match.url_name == 'playground' %}nav-link-active{% endif %}">Playground</a>
           <a href="{% url 'gallery_index' %}" class="nav-link {% if 'gallery' in request.resolver_match.url_name %}nav-link-active{% endif %}">Gallery</a>
           <a href="{% url 'stats_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'stats_dashboard' %}nav-link-active{% endif %}">Stats</a>
         </div>
+        {% else %}
+        <!-- Spacer for homepage to maintain layout -->
+        <div class="flex-1"></div>
         {% endif %}
         
         <!-- Wallet/Actions -->
-        <div class="flex items-center gap-3 ml-auto">
+        <div class="flex items-center gap-3 flex-shrink-0">
           <!-- Desktop Wallet Section -->
           <div class="hidden md:flex items-center gap-3">
             <div class="navbar-wallet">
