@@ -114,6 +114,25 @@
         background: rgba(255,255,255,0.08);
         border-color: #fff;
       }
+      .aius-balance-pill {
+        background: transparent;
+        color: #fff;
+        border: 2px solid #fff;
+        border-radius: 999px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        padding: 6px 22px;
+        min-width: 0;
+        min-height: 0;
+        height: auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        margin-right: 8px;
+        vertical-align: middle;
+        white-space: nowrap;
+      }
       .wallet-connected-dropdown {
         display: inline-block;
         position: relative;
@@ -303,12 +322,15 @@
           <div class="hidden md:flex items-center gap-3">
             <div class="navbar-wallet">
               <button id="connect-wallet-btn" class="wallet-btn-outline">Connect</button>
-              <div id="wallet-connected-container" class="wallet-connected-dropdown" style="display:none;position:relative;">
-                <button id="wallet-address-pill" class="wallet-address-pill">@wallet</button>
-                <div id="wallet-dropdown-menu" class="wallet-dropdown-menu" style="display:none;">
-                  <a href="#" class="wallet-dropdown-item"><img src="https://arbiscan.io/images/svg/brands/arbitrum.svg" style="width:18px;height:18px;vertical-align:middle;margin-right:8px;">Arbiscan</a>
-                  <a href="#" class="wallet-dropdown-item"><i class="fas fa-chart-pie" style="width:18px;margin-right:8px;"></i>Usage</a>
-                  <button id="disconnect-wallet-btn" class="wallet-dropdown-item"><i class="fas fa-unlink" style="width:18px;margin-right:8px;"></i>Disconnect</button>
+              <div id="wallet-connected-container" style="display:none;">
+                <div id="aius-balance-indicator" class="aius-balance-pill">AIUS: Loading...</div>
+                <div class="wallet-connected-dropdown" style="position:relative;display:inline-block;">
+                  <button id="wallet-address-pill" class="wallet-address-pill">@wallet</button>
+                  <div id="wallet-dropdown-menu" class="wallet-dropdown-menu" style="display:none;">
+                    <a href="#" class="wallet-dropdown-item"><img src="https://arbiscan.io/images/svg/brands/arbitrum.svg" style="width:18px;height:18px;vertical-align:middle;margin-right:8px;">Arbiscan</a>
+                    <a href="#" class="wallet-dropdown-item"><i class="fas fa-chart-pie" style="width:18px;margin-right:8px;"></i>Usage</a>
+                    <button id="disconnect-wallet-btn" class="wallet-dropdown-item"><i class="fas fa-unlink" style="width:18px;margin-right:8px;"></i>Disconnect</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -318,12 +340,15 @@
           <div class="md:hidden flex items-center gap-2">
             <div class="navbar-wallet">
               <button id="connect-wallet-btn-mobile" class="wallet-btn-outline">Connect</button>
-              <div id="wallet-connected-mobile" class="wallet-connected-dropdown" style="display:none;position:relative;">
-                <button id="wallet-address-pill-mobile" class="wallet-address-pill">@wallet</button>
-                <div id="wallet-dropdown-menu-mobile" class="wallet-dropdown-menu" style="display:none;">
-                  <a href="#" class="wallet-dropdown-item"><img src="https://arbiscan.io/images/svg/brands/arbitrum.svg" style="width:18px;height:18px;vertical-align:middle;margin-right:8px;">Arbiscan</a>
-                  <a href="#" class="wallet-dropdown-item"><i class="fas fa-chart-pie" style="width:18px;margin-right:8px;"></i>Usage</a>
-                  <button id="disconnect-wallet-btn-mobile" class="wallet-dropdown-item"><i class="fas fa-unlink" style="width:18px;margin-right:8px;"></i>Disconnect</button>
+              <div id="wallet-connected-mobile" style="display:none;">
+                <div id="aius-balance-indicator-mobile" class="aius-balance-pill">AIUS: Loading...</div>
+                <div class="wallet-connected-dropdown" style="position:relative;display:inline-block;">
+                  <button id="wallet-address-pill-mobile" class="wallet-address-pill">@wallet</button>
+                  <div id="wallet-dropdown-menu-mobile" class="wallet-dropdown-menu" style="display:none;">
+                    <a href="#" class="wallet-dropdown-item"><img src="https://arbiscan.io/images/svg/brands/arbitrum.svg" style="width:18px;height:18px;vertical-align:middle;margin-right:8px;">Arbiscan</a>
+                    <a href="#" class="wallet-dropdown-item"><i class="fas fa-chart-pie" style="width:18px;margin-right:8px;"></i>Usage</a>
+                    <button id="disconnect-wallet-btn-mobile" class="wallet-dropdown-item"><i class="fas fa-unlink" style="width:18px;margin-right:8px;"></i>Disconnect</button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -143,19 +143,23 @@ class MetaMaskManager {
 
     setupEventListeners() {
         // Listen for account changes
-        window.ethereum.on('accountsChanged', (accounts) => {
+        window.ethereum.on('accountsChanged', async (accounts) => {
             if (accounts.length === 0) {
                 this.disconnect();
             } else {
                 this.account = accounts[0];
-                this.updateUI();
+                await this.updateUI();
                 this.storeConnectionState();
             }
         });
 
         // Listen for chain changes
-        window.ethereum.on('chainChanged', (chainId) => {
-            this.checkAndSwitchNetwork();
+        window.ethereum.on('chainChanged', async (chainId) => {
+            await this.switchToArbitrum();
+            // Update balance after network change
+            if (this.isConnected) {
+                await this.updateBalanceUI();
+            }
         });
     }
 
@@ -165,7 +169,7 @@ class MetaMaskManager {
             if (accounts.length > 0) {
                 this.account = accounts[0];
                 this.isConnected = true;
-                await this.checkAndSwitchNetwork();
+                await this.switchToArbitrum();
             } else {
                 this.isConnected = false;
                 this.account = null;
@@ -471,26 +475,50 @@ class MetaMaskManager {
     }
 
     async updateBalanceUI() {
-        const aiusBalanceSpan = document.getElementById('aius-balance');
-        const aiusBalanceMobile = document.getElementById('aius-balance-mobile');
+        const aiusBalanceIndicator = document.getElementById('aius-balance-indicator');
+        const aiusBalanceIndicatorMobile = document.getElementById('aius-balance-indicator-mobile');
+        
         if (this.isConnected && this.account) {
+            // Show loading state
+            if (aiusBalanceIndicator) {
+                aiusBalanceIndicator.textContent = 'AIUS: Loading...';
+                aiusBalanceIndicator.style.display = 'inline-flex';
+            }
+            if (aiusBalanceIndicatorMobile) {
+                aiusBalanceIndicatorMobile.textContent = 'AIUS: Loading...';
+                aiusBalanceIndicatorMobile.style.display = 'inline-flex';
+            }
+            
             const balance = await this.fetchAIUSBalance();
             if (balance !== null) {
-                if (aiusBalanceSpan) {
-                    aiusBalanceSpan.textContent = `${balance} AIUS`;
-                    aiusBalanceSpan.style.display = 'inline-block';
+                const formattedBalance = parseFloat(balance).toLocaleString('en-US', {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 2
+                });
+                
+                if (aiusBalanceIndicator) {
+                    aiusBalanceIndicator.textContent = `AIUS: ${formattedBalance}`;
+                    aiusBalanceIndicator.style.display = 'inline-flex';
                 }
-                if (aiusBalanceMobile) {
-                    aiusBalanceMobile.textContent = `${balance} AIUS`;
-                    aiusBalanceMobile.style.display = 'block';
+                if (aiusBalanceIndicatorMobile) {
+                    aiusBalanceIndicatorMobile.textContent = `AIUS: ${formattedBalance}`;
+                    aiusBalanceIndicatorMobile.style.display = 'inline-flex';
                 }
             } else {
-                if (aiusBalanceSpan) aiusBalanceSpan.style.display = 'none';
-                if (aiusBalanceMobile) aiusBalanceMobile.style.display = 'none';
+                // Error state
+                if (aiusBalanceIndicator) {
+                    aiusBalanceIndicator.textContent = 'AIUS: Error';
+                    aiusBalanceIndicator.style.display = 'inline-flex';
+                }
+                if (aiusBalanceIndicatorMobile) {
+                    aiusBalanceIndicatorMobile.textContent = 'AIUS: Error';
+                    aiusBalanceIndicatorMobile.style.display = 'inline-flex';
+                }
             }
         } else {
-            if (aiusBalanceSpan) aiusBalanceSpan.style.display = 'none';
-            if (aiusBalanceMobile) aiusBalanceMobile.style.display = 'none';
+            // Hide when not connected
+            if (aiusBalanceIndicator) aiusBalanceIndicator.style.display = 'none';
+            if (aiusBalanceIndicatorMobile) aiusBalanceIndicatorMobile.style.display = 'none';
         }
     }
 
@@ -591,6 +619,9 @@ class MetaMaskManager {
             
             // Update network status if connected
             await this.updateNetworkStatusUI();
+            
+            // Update AIUS balance if connected
+            await this.updateBalanceUI();
         }
         
         // Hide dropdown menus by default
