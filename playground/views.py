@@ -333,8 +333,8 @@ def image_detail(request, image_id):
     """Detailed view for a single image"""
     image = get_object_or_404(ArbiusImage, id=image_id, is_accessible=True)
     
-    # Get current user's wallet address
-    current_wallet_address = getattr(request, 'wallet_address', None)
+    # Get current user's wallet address from session
+    current_wallet_address = request.session.get('wallet_address')
     
     # Check if user has upvoted this image
     user_has_upvoted = False

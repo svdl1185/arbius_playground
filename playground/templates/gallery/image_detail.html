@@ -60,6 +60,7 @@
                     <!-- Comment Form -->
                     {% if wallet_address %}
                         <form id="comment-form" class="space-y-4">
+                            {% csrf_token %}
                             <div>
                                 <label for="comment-content" class="block text-sm font-medium text-textmuted mb-2">
                                     Add a comment
@@ -143,9 +144,12 @@
                                     </div>
                                     <div class="flex-1">
                                         <div class="flex items-center space-x-2 mb-1">
-                                            <span class="text-sm font-medium text-white">
-                                                {{ comment.wallet_address|truncatechars:16 }}
-                                            </span>
+                                            <a href="https://arbiscan.io/address/{{ comment.wallet_address }}" 
+                                               target="_blank" 
+                                               rel="noopener noreferrer"
+                                               class="text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors">
+                                                @{{ comment.wallet_address|slice:":6" }}...{{ comment.wallet_address|slice:"-4:" }}
+                                            </a>
                                             <span class="text-xs text-textmuted">
                                                 {{ comment.created_at|timesince }} ago
                                             </span>
@@ -173,7 +177,84 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Emoji Reaction Logic (same as gallery)
+    // Get wallet connection status from MetaMaskManager
+    function getWalletConnectionStatus() {
+        if (window.metaMaskManager) {
+            return {
+                isConnected: window.metaMaskManager.isConnected,
+                account: window.metaMaskManager.account
+            };
+        }
+        return { isConnected: false, account: null };
+    }
+
+    // Update UI based on wallet connection status
+    function updateWalletUI() {
+        const walletStatus = getWalletConnectionStatus();
+        const commentForm = document.getElementById('comment-form');
+        const connectMessage = document.querySelector('.text-center');
+        
+        if (walletStatus.isConnected && walletStatus.account) {
+            // Show comment form, hide connect message
+            if (commentForm) commentForm.style.display = 'block';
+            if (connectMessage) connectMessage.style.display = 'none';
+        } else {
+            // Hide comment form, show connect message
+            if (commentForm) commentForm.style.display = 'none';
+            if (connectMessage) connectMessage.style.display = 'block';
+        }
+    }
+
+    // Initial UI update - wait for MetaMaskManager to be initialized
+    function initializeWalletUI() {
+        if (window.metaMaskManager) {
+            updateWalletUI();
+        } else {
+            // MetaMaskManager not ready yet, try again in 100ms
+            setTimeout(initializeWalletUI, 100);
+        }
+    }
+
+    // Listen for wallet connection changes
+    function setupWalletEventListeners() {
+        if (typeof window.ethereum !== 'undefined') {
+            window.ethereum.on('accountsChanged', updateWalletUI);
+            window.ethereum.on('chainChanged', updateWalletUI);
+        }
+        
+        // Also listen for custom events from MetaMaskManager if they exist
+        document.addEventListener('walletConnected', updateWalletUI);
+        document.addEventListener('walletDisconnected', updateWalletUI);
+    }
+
+    // Check if wallet is connected for reactions and comments
+    function isWalletConnected() {
+        const walletStatus = getWalletConnectionStatus();
+        return walletStatus.isConnected && walletStatus.account;
+    }
+
+    // Utility function to format wallet address consistently
+    function formatWalletAddress(address) {
+        if (!address || address.length < 10) return address;
+        return `@${address.slice(0, 6)}...${address.slice(-4)}`;
+    }
+
+    // Utility function to create wallet address link element
+    function createWalletAddressLink(address) {
+        const link = document.createElement('a');
+        link.className = 'text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors';
+        link.href = `https://arbiscan.io/address/${address}`;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = formatWalletAddress(address);
+        return link;
+    }
+
+    // Initialize
+    initializeWalletUI();
+    setupWalletEventListeners();
+
+    // Emoji Reaction Logic
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('emoji-reaction')) {
             e.preventDefault();
@@ -181,10 +262,14 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const imageId = e.target.dataset.imageId;
             const emoji = e.target.dataset.emoji;
-            const isDisabled = !('{{ wallet_address }}' && '{{ wallet_address }}' !== 'None');
             
-            if (isDisabled) {
-                alert('Please connect your wallet to react to images.');
+            if (!isWalletConnected()) {
+                // Show a toast message instead of alert
+                if (window.showToast) {
+                    window.showToast('Please connect your wallet to react to images.', 'warning');
+                } else {
+                    alert('Please connect your wallet to react to images.');
+                }
                 return;
             }
             
@@ -196,7 +281,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({ emoji: emoji })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     // Update the reactions display
@@ -205,12 +295,20 @@ document.addEventListener('DOMContentLoaded', function() {
                         updateReactionsDisplay(reactionsContainer, data.reactions, imageId);
                     }
                 } else {
-                    alert('Error: ' + data.error);
+                    if (window.showToast) {
+                        window.showToast('Error: ' + data.error, 'error');
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred while reacting.');
+                if (window.showToast) {
+                    window.showToast('An error occurred while reacting.', 'error');
+                } else {
+                    alert('An error occurred while reacting.');
+                }
             });
         }
         
@@ -220,10 +318,14 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
             
             const imageId = e.target.dataset.imageId;
-            const isDisabled = !('{{ wallet_address }}' && '{{ wallet_address }}' !== 'None');
             
-            if (isDisabled) {
-                alert('Please connect your wallet to react to images.');
+            if (!isWalletConnected()) {
+                // Show a toast message instead of alert
+                if (window.showToast) {
+                    window.showToast('Please connect your wallet to react to images.', 'warning');
+                } else {
+                    alert('Please connect your wallet to react to images.');
+                }
                 return;
             }
             
@@ -276,7 +378,12 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             body: JSON.stringify({ emoji: emoji })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 // Update the reactions display
@@ -286,12 +393,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 picker.remove();
             } else {
-                alert('Error: ' + data.error);
+                if (window.showToast) {
+                    window.showToast('Error: ' + data.error, 'error');
+                } else {
+                    alert('Error: ' + data.error);
+                }
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred while reacting.');
+            if (window.showToast) {
+                window.showToast('An error occurred while reacting.', 'error');
+            } else {
+                alert('An error occurred while reacting.');
+            }
         });
     }
 
@@ -324,13 +439,26 @@ document.addEventListener('DOMContentLoaded', function() {
         commentForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const content = document.getElementById('comment-content').value.trim();
-            if (!content) {
-                alert('Please enter a comment.');
+            if (!isWalletConnected()) {
+                if (window.showToast) {
+                    window.showToast('Please connect your wallet to comment.', 'warning');
+                } else {
+                    alert('Please connect your wallet to comment.');
+                }
                 return;
             }
             
-            const imageId = {{ image.id }};
+            const content = document.getElementById('comment-content').value.trim();
+            if (!content) {
+                if (window.showToast) {
+                    window.showToast('Please enter a comment.', 'warning');
+                } else {
+                    alert('Please enter a comment.');
+                }
+                return;
+            }
+            
+            const imageId = parseInt('{{ image.id }}');
             
             fetch(`/api/image/${imageId}/comment/`, {
                 method: 'POST',
@@ -340,36 +468,56 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({ content: content })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('Comment API response:', data);
                 if (data.success) {
-                    // Clear the form
-                    document.getElementById('comment-content').value = '';
+                    try {
+                        // Clear the form
+                        document.getElementById('comment-content').value = '';
                     
                     // Add the new comment to the comments container
                     const commentsContainer = document.getElementById('comments-container');
                     const newComment = document.createElement('div');
                     newComment.className = 'comment-item border-b border-border pb-4 last:border-b-0';
-                    newComment.innerHTML = `
-                        <div class="flex items-start space-x-3">
-                            <div class="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
-                                <i class="fas fa-user text-textmuted text-sm"></i>
-                            </div>
-                            <div class="flex-1">
-                                <div class="flex items-center space-x-2 mb-1">
-                                    <span class="text-sm font-medium text-white">
-                                        ${data.comment.wallet_address.substring(0, 16)}...
-                                    </span>
-                                    <span class="text-xs text-textmuted">
-                                        just now
-                                    </span>
-                                </div>
-                                <p class="text-textmuted text-sm leading-relaxed">
-                                    ${data.comment.content}
-                                </p>
-                            </div>
-                        </div>
-                    `;
+                    
+                    // Create comment structure safely without innerHTML
+                    const commentDiv = document.createElement('div');
+                    commentDiv.className = 'flex items-start space-x-3';
+                    
+                    const avatarDiv = document.createElement('div');
+                    avatarDiv.className = 'w-8 h-8 bg-white/10 rounded-full flex items-center justify-center';
+                    avatarDiv.innerHTML = '<i class="fas fa-user text-textmuted text-sm"></i>';
+                    
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'flex-1';
+                    
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = 'flex items-center space-x-2 mb-1';
+                    
+                    const usernameLink = createWalletAddressLink(data.comment.wallet_address);
+                    
+                    const timeSpan = document.createElement('span');
+                    timeSpan.className = 'text-xs text-textmuted';
+                    timeSpan.textContent = 'just now';
+                    
+                    const commentText = document.createElement('p');
+                    commentText.className = 'text-textmuted text-sm leading-relaxed';
+                    commentText.textContent = data.comment.content; // Safe text content
+                    
+                    // Assemble the structure
+                    headerDiv.appendChild(usernameLink);
+                    headerDiv.appendChild(timeSpan);
+                    contentDiv.appendChild(headerDiv);
+                    contentDiv.appendChild(commentText);
+                    commentDiv.appendChild(avatarDiv);
+                    commentDiv.appendChild(contentDiv);
+                    newComment.appendChild(commentDiv);
                     
                     // Remove the "no comments" message if it exists
                     const noComments = commentsContainer.querySelector('.text-center');
@@ -380,18 +528,42 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Add the new comment at the top
                     commentsContainer.insertBefore(newComment, commentsContainer.firstChild);
                     
-                    // Update comment count
-                    const commentCount = document.querySelector('h3');
-                    const currentCount = parseInt(commentCount.textContent.match(/\((\d+)\)/)[1]);
-                    commentCount.innerHTML = `<i class="fas fa-comments mr-2 text-textmuted"></i>Comments (${currentCount + 1})`;
+                    // Update comment count more safely
+                    const commentCountElement = document.querySelector('#comments-container').closest('.bg-cardbg').querySelector('h3');
+                    if (commentCountElement) {
+                        const countMatch = commentCountElement.textContent.match(/\((\d+)\)/);
+                        if (countMatch) {
+                            const currentCount = parseInt(countMatch[1]);
+                            const newCount = currentCount + 1;
+                            commentCountElement.innerHTML = `<i class="fas fa-comments mr-2 text-textmuted"></i>Comments (${newCount})`;
+                        }
+                    }
+                    
+                        if (window.showToast) {
+                            window.showToast('Comment posted successfully!', 'success');
+                        }
+                    } catch (domError) {
+                        console.error('Error updating DOM after comment post:', domError);
+                        if (window.showToast) {
+                            window.showToast('Comment posted, but there was an issue updating the page. Please refresh.', 'warning');
+                        }
+                    }
                     
                 } else {
-                    alert('Error: ' + data.error);
+                    if (window.showToast) {
+                        window.showToast('Error: ' + data.error, 'error');
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred while posting the comment.');
+                if (window.showToast) {
+                    window.showToast('An error occurred while posting the comment.', 'error');
+                } else {
+                    alert('An error occurred while posting the comment.');
+                }
             });
         });
     }

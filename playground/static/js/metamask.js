@@ -145,12 +145,23 @@ class MetaMaskManager {
     setupEventListeners() {
         // Listen for account changes
         window.ethereum.on('accountsChanged', async (accounts) => {
+            const previousAccount = this.account;
             if (accounts.length === 0) {
                 this.disconnect();
             } else {
                 this.account = accounts[0];
+                this.isConnected = true;
                 await this.updateUI();
                 this.storeConnectionState();
+                
+                // Dispatch event if account changed
+                if (previousAccount !== this.account) {
+                    if (this.account) {
+                        document.dispatchEvent(new CustomEvent('walletConnected', { 
+                            detail: { account: this.account } 
+                        }));
+                    }
+                }
             }
         });
 
@@ -186,6 +197,7 @@ class MetaMaskManager {
     }
 
     async checkBackendAuthStatus() {
+        const previousState = this.isConnected;
         try {
             const response = await fetch('/api/check-auth-status/', {
                 method: 'GET',
@@ -211,6 +223,18 @@ class MetaMaskManager {
             this.isConnected = false;
             this.account = null;
         }
+        
+        // Dispatch custom events when connection state changes
+        if (previousState !== this.isConnected) {
+            if (this.isConnected) {
+                document.dispatchEvent(new CustomEvent('walletConnected', { 
+                    detail: { account: this.account } 
+                }));
+            } else {
+                document.dispatchEvent(new CustomEvent('walletDisconnected'));
+            }
+        }
+        
         this.updateUI();
         this.storeConnectionState();
     }
@@ -436,6 +460,9 @@ class MetaMaskManager {
         this.account = null;
         this.updateUI();
         this.clearStoredConnectionState();
+        
+        // Dispatch disconnection event
+        document.dispatchEvent(new CustomEvent('walletDisconnected'));
     }
 
     async loadEthers() {
